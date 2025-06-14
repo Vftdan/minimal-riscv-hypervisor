@@ -8,7 +8,8 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.S
 
 # Header file recursive dependency list
 hypervisor_h = $(SRC_DIR)/hypervisor.h
+csr_h = $(SRC_DIR)/csr.h $(SRC_DIR)/csrs.cc
 
-$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h)
+$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
