@@ -31,4 +31,6 @@ typedef enum {
 #define MIE_MTIE (1L << 7)   // Timer
 #define MIE_MSIE (1L << 3)   // Software
 
+#define MCAUSE_ASYNC_BIT (1ULL << 63)
+
 #endif /* end of include guard: SRC_CSR_H_ */

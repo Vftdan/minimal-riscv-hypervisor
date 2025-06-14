@@ -9,7 +9,7 @@ BUILD_DIR=build
 QEMU=qemu-system-riscv64
 QEMUFLAGS=-nographic -machine virt -smp 1 -bios none -kernel
 
-HYPMODS=hypenterleave lto_required hypervisor
+HYPMODS=hypenterleave lto_required hypervisor exchandlers
 
 HYPOBJS:=$(foreach mod,$(HYPMODS),$(BUILD_DIR)/$(mod).o)
 
