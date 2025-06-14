@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 // Imported from hypenterleave.S
-void halt_thread(void);
+__attribute__((noreturn)) void halt_thread(void);
 void _exc_entry(void);
 void enter_guest(void);
 
