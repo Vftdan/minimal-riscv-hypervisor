@@ -16,8 +16,9 @@ pagealloc_h = $(SRC_DIR)/pagealloc.h $(vmem_h)
 sync_h = $(SRC_DIR)/sync.h
 uart_h = $(SRC_DIR)/uart.h
 print_h = $(SRC_DIR)/print.h
+panic_h = $(SRC_DIR)/panic.h
 
-$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h)
+$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
@@ -34,5 +35,9 @@ $(BUILD_DIR)/pagealloc.o: $(SRC_DIR)/pagealloc.c $(pagealloc_h) $(sync_h)
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
 $(BUILD_DIR)/print.o: $(SRC_DIR)/print.c $(print_h) $(uart_h)
+	mkdir -p $(shell dirname "$@")
+	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
+
+$(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@

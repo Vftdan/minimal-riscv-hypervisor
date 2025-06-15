@@ -3,6 +3,7 @@
 #include "csr.h"
 #include "exchandlers.h"
 #include "print.h"
+#include "panic.h"
 
 uint8_t hypstack0[4096] = {};
 
