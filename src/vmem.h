@@ -44,8 +44,9 @@ __attribute__((unused)) inline static MempermMask _permbit_from_index(MempermInd
 
 typedef struct {
 	union {
-		PackedPagetableEntry* next_entry;
-		MemoryPage* address;
+		PagetablePage *child_table;
+		MemoryPage *resolved_range_start;
+		uintptr_t numeric_address;
 	};
 	MempermMask permissions : PERMSHIFT;
 } UnpackedPagetableEntry;
