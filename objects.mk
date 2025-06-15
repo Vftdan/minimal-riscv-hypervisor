@@ -12,6 +12,7 @@ csr_h = $(SRC_DIR)/csr.h $(SRC_DIR)/csrs.cc
 exchandlers_h = $(SRC_DIR)/exchandlers.h
 base_types_h = $(SRC_DIR)/base_types.h $(SRC_DIR)/registers.cc $(csr_h)
 vmem_h = $(SRC_DIR)/vmem.h $(base_types_h)
+pagealloc_h = $(SRC_DIR)/pagealloc.h $(vmem_h)
 sync_h = $(SRC_DIR)/sync.h
 
 $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h)
@@ -23,5 +24,9 @@ $(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervis
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
 $(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h)
+	mkdir -p $(shell dirname "$@")
+	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
+
+$(BUILD_DIR)/pagealloc.o: $(SRC_DIR)/pagealloc.c $(pagealloc_h) $(sync_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
