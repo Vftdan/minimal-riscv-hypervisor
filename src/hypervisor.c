@@ -16,6 +16,11 @@ void exception(void)
 	if (mcause & MCAUSE_ASYNC_BIT) {
 		handle_interrupt(mcause);
 	} else {
-		handle_sync_exception(mcause);
+		uint64_t mstatus = r_mstatus();
+		if ((mstatus & MSTATUS_MPP_MASK) != MSTATUS_MPP_U) {
+			handle_hypervisor_exception(mcause);
+		} else {
+			handle_guest_exception(mcause);
+		}
 	}
 }

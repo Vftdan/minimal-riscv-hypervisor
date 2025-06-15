@@ -20,14 +20,15 @@ void handle_interrupt(uint64_t mcause)
 	}
 }
 
-void handle_sync_exception(uint64_t mcause)
+void handle_hypervisor_exception(uint64_t mcause)
 {
-	uint64_t mstatus = r_mstatus();
-	if ((mstatus & MSTATUS_MPP_MASK) != MSTATUS_MPP_U) {
-		// Exception caused by the hypervisor itself
-		// TODO panic
-	}
+	// Exception caused by the hypervisor itself
+	// TODO panic
+	(void) mcause;
+}
 
+void handle_guest_exception(uint64_t mcause)
+{
 	switch (mcause) {
 		// TODO emulate the instruction when should be allowed
 		//      otherwise, forward the error to the guest
