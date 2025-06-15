@@ -26,6 +26,7 @@ void print_addr(uintptr_t num)
 	char buf[2 + 2 * sizeof(uintptr_t)] = "0x";
 	for (size_t i = sizeof(uintptr_t); i > 0; --i) {
 		uint8_t byte = num & 0xFF;
+		num >>= 8;
 		uint8_t nibbles[2] = { byte >> 4, byte & 0xF };
 		for (size_t j = 0; j < 2; ++j) {
 			uint8_t c = nibbles[j];
