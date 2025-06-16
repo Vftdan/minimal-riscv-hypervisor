@@ -4,6 +4,7 @@
 #include "print.h"
 #include "panic.h"
 #include "contexts.h"
+#include "instructions.h"  // Bit manipulation
 
 uint64_t get_virtual_csr(CSRNumber csr_id)
 {
@@ -23,7 +24,44 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			uint64_t uxl = 2;  // Guest user mode is always 64-bit
 			result |= uxl << 32;
 			result |= guest_thr->csr.mstatus_mpp << 11;
+			if (guest_thr->csr.mstatus_mie) {
+				result |= MSTATUS_MIE;
+			}
 			return result;
+		}
+		break;
+	case CSR_mie: {
+			uint64_t result = 0;
+			if (guest_thr->csr.mie_msie) {
+				result |= MIE_MSIE;
+			}
+			return result;
+		}
+		break;
+	case CSR_mtvec: {
+			return guest_thr->csr.mtvec;
+		}
+		break;
+	case CSR_satp: {
+			uint64_t result = 0;
+			uint64_t mode = guest_thr->csr.satp_mode;
+			uint64_t ppn = guest_thr->csr.satp_ppn;
+			result |= mode << 60;
+			result |= ppn;
+			return result;
+		}
+		break;
+	case CSR_pmpcfg0 ... CSR_pmpcfg15:
+	case CSR_pmpaddr0 ... CSR_pmpaddr63: {
+			return 0;
+		}
+		break;
+	case CSR_mepc: {
+			return guest_thr->csr.mepc;
+		}
+		break;
+	case CSR_mscratch: {
+			return guest_thr->csr.mscratch;
 		}
 		break;
 	default:
@@ -48,14 +86,42 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	switch (csr_id) {
 	case CSR_mstatus: {
 			bool should_panic = false;
-			if (value & MSTATUS_MIE) {
-				print_string("\nEmulate machine-mode interrupt enable");
-				should_panic = true;
-			}
 			guest_thr->csr.mstatus_mpp = (value >> 11) & 3;
+			guest_thr->csr.mstatus_mie = !!(value & MSTATUS_MIE);
 			if (should_panic) {
 				panic();
 			}
+		}
+		break;
+	case CSR_mie: {
+			guest_thr->csr.mie_msie = !!(value & MIE_MSIE);
+			value &= ~(MIE_MSIE);
+			if (value) {
+				print_string("\nUnhandled mie fields: ");
+				print_addr(value);
+				panic();
+			}
+		}
+		break;
+	case CSR_mtvec: {
+			guest_thr->csr.mtvec = value;
+		}
+		break;
+	case CSR_satp: {
+			guest_thr->csr.satp_ppn = EXTRACT_BITS(value, 0, 44);
+			guest_thr->csr.satp_mode = EXTRACT_BITS(value, 60, 4);
+			// Ignore satp.ASID
+		}
+		break;
+	case CSR_pmpcfg0 ... CSR_pmpcfg15:
+	case CSR_pmpaddr0 ... CSR_pmpaddr63:
+		break;  // Ignore
+	case CSR_mepc: {
+			guest_thr->csr.mepc = value;
+		}
+		break;
+	case CSR_mscratch: {
+			guest_thr->csr.mscratch = value;
 		}
 		break;
 	default:

@@ -15,7 +15,14 @@ typedef struct {
 
 typedef struct {
 	struct {
+		uint64_t mtvec;
+		uint64_t mepc;
+		uint64_t mscratch;
 		uint64_t mstatus_mpp : 2;
+		uint64_t mstatus_mie : 1;
+		uint64_t mie_msie : 1;
+		uint64_t satp_mode : 4;
+		uint64_t satp_ppn : 44;
 	} csr;
 } GuestThreadContext;
 
