@@ -53,8 +53,17 @@ void handle_guest_exception(uint64_t mcause)
 				CSRNumber csr_id = (unpacked.funct7 << 5) | unpacked.rs2;
 				switch (unpacked.funct3) {
 				case 0: {
-						print_string("\nGuest ecall/ebreak");
-						panic();
+						switch (unpacked.funct7) {
+						case 0:
+							print_string("\nGuest ecall/ebreak");
+							panic();
+						case 9:
+							if (unpacked.rd == 0) {
+								print_string("[Guest sfence.vma]");  // TODO
+								w_mepc(guest_addr + 4);  // Advance the program counter
+								return;
+							}
+						}
 					}
 					break;
 				case 2: {
