@@ -5,31 +5,112 @@
 #include "panic.h"
 #include "pagealloc.h"
 #include "contexts.h"
+#include "instructions.h"
 
 PagetablePage machine_pagetable_roots[MAX_GUESTS] = {};
 
 _Static_assert(_Alignof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is not properly aligned");
 _Static_assert(sizeof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is of incorrect size");
 
+static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, size_t *width_out, int *reg_out, int *pc_advance_out)
+{
+	PackedInstruction packed = dereference_instruction(instr_ptr);
+	if ((packed.numeric_value & 3) == 3) {
+		if (pc_advance_out) {
+			*pc_advance_out = 4;
+		}
+		UnpackedInstruction unpacked = unpack_instruction(packed);
+		print_string("\nExtract source address\ninstruction = ");
+		print_addr(packed.numeric_value);
+		print_string("\nopcode = ");
+		print_addr(unpacked.opcode);
+		print_string("\nrd = ");
+		print_addr(unpacked.rd);
+		print_string("\nfunct3 = ");
+		print_addr(unpacked.funct3);
+		print_string("\nrs1 = ");
+		print_addr(unpacked.rs1);
+		print_string("\nrs2 = ");
+		print_addr(unpacked.rs2);
+		print_string("\nfunct7 = ");
+		print_addr(unpacked.funct7);
+		panic();
+	} else {
+		if (pc_advance_out) {
+			*pc_advance_out = 2;
+		}
+		UnpackedCompressedInstruction unpacked = unpack_compressed_instruction(packed);
+		int funct3 = unpacked.funct4 >> 1;
+
+		switch (unpacked.opcode) {
+		case 0: {
+				int reg1 = 8 + (unpacked.rs2 & 7);
+				int reg2 = 8 + (unpacked.rs1 & 7);
+				int imm_6 = (unpacked.rs2 >> 3) & 1;
+				int imm_2_or_7 = (unpacked.rs2 >> 4);
+				int imm_5 = unpacked.funct4 & 1;
+				int imm_4 = unpacked.rs1 >> 4;
+				int imm_3_or_8 = (unpacked.rs1 >> 3) & 1;
+				uintptr_t reg_value = ctx->active_regs.x_plus_one[reg2 - 1];
+				if (reg_out) {
+					*reg_out = reg1;
+				}
+				switch (funct3) {
+					int imm;
+				case 2:  // C.LW
+					if (width_out) {
+						*width_out = 4;
+					}
+					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 2) | (imm_6 << 6);
+					return reg_value + imm;
+				case 3:  // C.LD
+					if (width_out) {
+						*width_out = 8;
+					}
+					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
+					return reg_value + imm;
+				}
+			}
+		}
+
+		print_string("\nExtract source address\ninstruction = ");
+		print_addr(packed.compressed_numeric_value);
+		print_string("\ncompressed opcode = ");
+		print_addr(unpacked.opcode);
+		print_string("\nrs2 = ");
+		print_addr(unpacked.rs2);
+		print_string("\nrs1 = ");
+		print_addr(unpacked.rs1);
+		print_string("\nfunct4 = ");
+		print_addr(unpacked.funct4);
+		panic();
+	}
+}
+
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
 	uintptr_t instr_addr = r_mepc();
 	uintptr_t fault_addr;
+	size_t rw_width;
+	int rw_reg = 0;
+	int pc_advance;
 	switch (access_type) {
 	case PERMIDX_R:
-		print_string("\nLoad page fault");
-		panic();
+		fault_addr = parse_source_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance);
+		break;
 	case PERMIDX_W:
 		print_string("\nStore page fault");
 		panic();
 	case PERMIDX_X:
 		fault_addr = instr_addr;
+		rw_width = 4;
 		break;
 	default:
 		print_string("\nInvalid page fault type");
 		panic();
 	}
+	(void) rw_width;  // TODO handle accesses at page boundary
 	if (virt_out) {
 		*virt_out = fault_addr;
 	}

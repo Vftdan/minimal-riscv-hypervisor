@@ -141,6 +141,25 @@ void handle_guest_exception(uint64_t mcause)
 			}
 		}
 		break;
+	case 13: {  // Load page fault
+			uintptr_t virt_addr;
+			switch (handle_page_fault(PERMIDX_R, &virt_addr)) {
+			case PFHR_SUCCESS:
+				break;
+			case PFHR_TOO_LOW:
+				print_string("\nGuest read below RAM\nsource address = ");
+				print_addr(virt_addr);
+				panic();
+			case PFHR_TOO_HIGH:
+				print_string("\nGuest read beyond Sv39\nsource address = ");
+				print_addr(virt_addr);
+				panic();
+			case PFHR_NOT_CHANGED:
+				print_string("\nGuest unknown load page fault");
+				panic();
+			}
+		}
+		break;
 	default: {
 			print_string("\nUnhandled guest-caused exception\nmcause = ");
 			print_addr(mcause);
