@@ -22,9 +22,9 @@ instructions_h = $(SRC_DIR)/instructions.h
 
 $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
 
-$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(pagealloc_h) $(contexts_h) $(instructions_h) $(SRC_DIR)/csrs.cc
+$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(contexts_h) $(instructions_h) $(SRC_DIR)/csrs.cc
 
-$(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h)
+$(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h) $(print_h) $(panic_h) $(pagealloc_h) $(contexts_h)
 
 $(BUILD_DIR)/pagealloc.o: $(SRC_DIR)/pagealloc.c $(pagealloc_h) $(sync_h)
 

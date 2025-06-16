@@ -71,4 +71,13 @@ __attribute__((unused)) inline static UnpackedPagetableEntry unpack_pt_entry(Pac
 	return unpacked;
 }
 
+typedef enum {
+	PFHR_SUCCESS,      // Page tables were modified, the faulted instruction should be retried
+	PFHR_NOT_CHANGED,  // Page tables already have all relevant entries, there is probably a bug in the page handling code
+	PFHR_TOO_LOW,      // The virtual address is below the handled range
+	PFHR_TOO_HIGH,     // The virtual address is above the handled range
+} PageFaultHandlerResult;
+
+PageFaultHandlerResult handle_page_fault(MempermIndex access_type);
+
 #endif /* end of include guard: SRC_VMEM_H_ */
