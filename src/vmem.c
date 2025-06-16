@@ -6,6 +6,7 @@
 #include "pagealloc.h"
 #include "contexts.h"
 #include "instructions.h"
+#include "virtmmdev.h"
 
 PagetablePage machine_pagetable_roots[MAX_GUESTS] = {};
 
@@ -116,6 +117,24 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	}
 
 	if (fault_addr < 0x80000000) {
+		// Devices are mapped below RAM
+		uint64_t *reg_ptr = rw_reg ? &ctx->active_regs.x_plus_one[rw_reg - 1] : NULL;
+		switch (access_type) {
+		case PERMIDX_R:
+			if (virtual_mmdev_load(fault_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
+				w_mepc(instr_addr + pc_advance);
+				return PFHR_SUCCESS;
+			}
+			break;
+		case PERMIDX_W:
+			if (virtual_mmdev_store(fault_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
+				w_mepc(instr_addr + pc_advance);
+				return PFHR_SUCCESS;
+			}
+			break;
+		default:
+			break;
+		}
 		return PFHR_TOO_LOW;
 	}
 	uint64_t lvl3 = fault_addr >> 30;

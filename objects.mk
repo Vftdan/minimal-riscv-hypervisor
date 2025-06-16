@@ -20,12 +20,13 @@ panic_h = $(SRC_DIR)/panic.h
 contexts_h = $(SRC_DIR)/contexts.h $(base_types_h) $(vmem_h)
 instructions_h = $(SRC_DIR)/instructions.h
 virtcsr_h = $(SRC_DIR)/virtcsr.h $(csr_h)
+virtmmdev_h = $(SRC_DIR)/virtmmdev.h $(vmem_h)
 
 $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
 
 $(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(contexts_h) $(instructions_h) $(virtcsr_h)
 
-$(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h) $(print_h) $(panic_h) $(pagealloc_h) $(contexts_h)
+$(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h) $(print_h) $(panic_h) $(pagealloc_h) $(contexts_h) $(instructions_h) $(virtmmdev_h)
 
 $(BUILD_DIR)/pagealloc.o: $(SRC_DIR)/pagealloc.c $(pagealloc_h) $(sync_h)
 
@@ -36,3 +37,5 @@ $(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h) $
 $(BUILD_DIR)/contexts.o: $(SRC_DIR)/contexts.c $(contexts_h)
 
 $(BUILD_DIR)/virtcsr.o: $(SRC_DIR)/virtcsr.c $(virtcsr_h) $(print_h) $(panic_h) $(contexts_h) $(instructions_h) $(SRC_DIR)/csrs.cc
+
+$(BUILD_DIR)/virtmmdev.o: $(SRC_DIR)/virtmmdev.c $(virtmmdev_h)
