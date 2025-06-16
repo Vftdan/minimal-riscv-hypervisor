@@ -18,10 +18,11 @@ uart_h = $(SRC_DIR)/uart.h
 print_h = $(SRC_DIR)/print.h
 panic_h = $(SRC_DIR)/panic.h
 contexts_h = $(SRC_DIR)/contexts.h $(base_types_h) $(vmem_h)
+instructions_h = $(SRC_DIR)/instructions.h
 
 $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
 
-$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(pagealloc_h) $(contexts_h)
+$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(pagealloc_h) $(contexts_h) $(instructions_h) $(SRC_DIR)/csrs.cc
 
 $(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h)
 

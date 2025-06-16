@@ -7,6 +7,7 @@
 #include "vmem.h"
 #include "pagealloc.h"
 #include "contexts.h"
+#include "instructions.h"
 
 void handle_interrupt(uint64_t mcause)
 {
@@ -39,6 +40,59 @@ void handle_guest_exception(uint64_t mcause)
 	switch (mcause) {
 		// TODO emulate the instruction when should be allowed
 		//      otherwise, forward the error to the guest
+	case 2: {  // Illegal instruction
+			uintptr_t guest_addr = r_mepc();
+			if (guest_addr < 0x80000000 || guest_addr > 0x8080000000) {
+				print_string("\nGuest illegal instruction not in memory range");
+				panic();
+			}
+			uintptr_t host_addr = guest_addr + GUEST_MEMORY_OFFSET;
+			PackedInstruction packed = *(PackedInstruction*) host_addr;
+			UnpackedInstruction unpacked = unpack_instruction(packed);
+			if (unpacked.opcode == 0x73) {
+				// ecall, ebreak, csr manipulation
+				int csr_id = (unpacked.funct7 << 5) | unpacked.rs2;
+				char *csr_name = "unknown";
+				switch (csr_id) {
+#define DECLARE_CSR(num, name) case CSR_##name: csr_name = #name; break;
+#include "csrs.cc"
+#undef DECLARE_CSR
+				}
+				switch (unpacked.funct3) {
+				case 0: {
+						print_string("\nGuest ecall/ebreak");
+						panic();
+					}
+					break;
+				case 2: {
+						// csrr
+						print_string("\nGuest csrr: ");
+						print_string(csr_name);
+						print_string("\nsaved to x[");
+						print_addr(unpacked.rd);
+						print_string("]");
+						panic();
+					}
+					break;
+				}
+			}
+			print_string("\nGuest illegal instruction\ninstruction = ");
+			print_addr(packed.numeric_value);
+			print_string("\nopcode = ");
+			print_addr(unpacked.opcode);
+			print_string("\nrd = ");
+			print_addr(unpacked.rd);
+			print_string("\nfunct3 = ");
+			print_addr(unpacked.funct3);
+			print_string("\nrs1 = ");
+			print_addr(unpacked.rs1);
+			print_string("\nrs2 = ");
+			print_addr(unpacked.rs2);
+			print_string("\nfunct7 = ");
+			print_addr(unpacked.funct7);
+			panic();
+		}
+		break;
 	case 12: {  // Instruction page fault
 			uint64_t addr = r_mepc();
 			if (addr < 0x80000000) {
