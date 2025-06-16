@@ -3,6 +3,10 @@
 
 #include "base_types.h"
 
+// First guest should resolve guest ram_start to host (ram_start + GUEST_MEMORY_OFFSET)
+// It's also the offset at which the first kernel and its data should be loaded
+#define GUEST_MEMORY_OFFSET 0x5000000
+
 // Number of lower bits inside a memory address that are withing a single page
 #define PGSHIFT 12
 #define PGSIZE (1 << PGSHIFT)
