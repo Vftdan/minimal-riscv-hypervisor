@@ -23,7 +23,7 @@ $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(ex
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
-$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h)
+$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
