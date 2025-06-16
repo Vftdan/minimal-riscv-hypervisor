@@ -6,10 +6,13 @@
 #include <stdbool.h>
 #include "csr.h"
 
-typedef struct {
+typedef union {
+	struct {
 #define DECLARE_GP_REGISTER(num, name) uint64_t name;
 #include "registers.cc"
 #undef DECLARE_GP_REGISTER
+	};
+	uint64_t x_plus_one[31];
 } SavedRegisters;
 
 // Number of supported guest machines

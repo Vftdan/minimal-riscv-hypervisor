@@ -7,6 +7,7 @@
 #include "vmem.h"
 #include "contexts.h"
 #include "instructions.h"
+#include "virtcsr.h"
 
 void handle_interrupt(uint64_t mcause)
 {
@@ -49,13 +50,7 @@ void handle_guest_exception(uint64_t mcause)
 			UnpackedInstruction unpacked = unpack_instruction(packed);
 			if (unpacked.opcode == 0x73) {
 				// ecall, ebreak, csr manipulation
-				int csr_id = (unpacked.funct7 << 5) | unpacked.rs2;
-				char *csr_name = "unknown";
-				switch (csr_id) {
-#define DECLARE_CSR(num, name) case CSR_##name: csr_name = #name; break;
-#include "csrs.cc"
-#undef DECLARE_CSR
-				}
+				CSRNumber csr_id = (unpacked.funct7 << 5) | unpacked.rs2;
 				switch (unpacked.funct3) {
 				case 0: {
 						print_string("\nGuest ecall/ebreak");
@@ -64,12 +59,11 @@ void handle_guest_exception(uint64_t mcause)
 					break;
 				case 2: {
 						// csrr
-						print_string("\nGuest csrr: ");
-						print_string(csr_name);
-						print_string("\nsaved to x[");
-						print_addr(unpacked.rd);
-						print_string("]");
-						panic();
+						HostThreadData *ctx = get_host_thread_address();
+						uint64_t value = get_virtual_csr(csr_id);
+						if (unpacked.rd) {
+							ctx->active_regs.x_plus_one[unpacked.rd - 1] = value;
+						}
 					}
 					break;
 				}
