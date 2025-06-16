@@ -64,6 +64,8 @@ void handle_guest_exception(uint64_t mcause)
 						if (unpacked.rd) {
 							ctx->active_regs.x_plus_one[unpacked.rd - 1] = value;
 						}
+						w_mepc(guest_addr + 4);  // Advance the program counter
+						return;
 					}
 					break;
 				}
