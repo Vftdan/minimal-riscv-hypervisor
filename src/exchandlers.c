@@ -46,7 +46,7 @@ void handle_guest_exception(uint64_t mcause)
 				panic();
 			}
 			uintptr_t host_addr = guest_addr + GUEST_MEMORY_OFFSET;
-			PackedInstruction packed = *(PackedInstruction*) host_addr;
+			PackedInstruction packed = dereference_instruction((PackedInstruction*) host_addr);
 			UnpackedInstruction unpacked = unpack_instruction(packed);
 			if (unpacked.opcode == 0x73) {
 				// ecall, ebreak, csr manipulation
