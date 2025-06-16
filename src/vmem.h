@@ -51,4 +51,20 @@ typedef struct {
 	MempermMask permissions : PERMSHIFT;
 } UnpackedPagetableEntry;
 
+__attribute__((unused)) inline static PackedPagetableEntry pack_pt_entry(UnpackedPagetableEntry unpacked)
+{
+	PackedPagetableEntry packed;
+	packed.numeric_value = unpacked.numeric_address >> PGSHIFT << PERMSHIFT;
+	packed.numeric_value |= unpacked.permissions;
+	return packed;
+}
+
+__attribute__((unused)) inline static UnpackedPagetableEntry unpack_pt_entry(PackedPagetableEntry packed)
+{
+	UnpackedPagetableEntry unpacked;
+	unpacked.numeric_address = packed.numeric_value >> PERMSHIFT << PGSHIFT;
+	unpacked.permissions = packed.numeric_value & ((1 << PERMSHIFT) - 1);
+	return unpacked;
+}
+
 #endif /* end of include guard: SRC_VMEM_H_ */
