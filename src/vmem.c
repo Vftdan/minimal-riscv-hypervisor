@@ -12,7 +12,7 @@ PagetablePage machine_pagetable_roots[MAX_GUESTS] = {};
 _Static_assert(_Alignof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is not properly aligned");
 _Static_assert(sizeof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is of incorrect size");
 
-static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, size_t *width_out, int *reg_out, int *pc_advance_out)
+static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
 {
 	PackedInstruction packed = dereference_instruction(instr_ptr);
 	if ((packed.numeric_value & 3) == 3) {
@@ -59,13 +59,13 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 					int imm;
 				case 2:  // C.LW
 					if (width_out) {
-						*width_out = 4;
+						*width_out = MAW_32BIT;
 					}
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 2) | (imm_6 << 6);
 					return reg_value + imm;
 				case 3:  // C.LD
 					if (width_out) {
-						*width_out = 8;
+						*width_out = MAW_64BIT;
 					}
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
 					return reg_value + imm;
@@ -92,7 +92,7 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	HostThreadData *ctx = get_host_thread_address();
 	uintptr_t instr_addr = r_mepc();
 	uintptr_t fault_addr;
-	size_t rw_width;
+	MemoryAccessWidth rw_width;
 	int rw_reg = 0;
 	int pc_advance;
 	switch (access_type) {

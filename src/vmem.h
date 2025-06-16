@@ -80,4 +80,11 @@ typedef enum {
 
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out);
 
+typedef enum {
+	MAW_8BIT = 1,
+	MAW_16BIT = 2,
+	MAW_32BIT = 4,
+	MAW_64BIT = 8,
+} MemoryAccessWidth;
+
 #endif /* end of include guard: SRC_VMEM_H_ */
