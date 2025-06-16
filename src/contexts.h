@@ -1,0 +1,28 @@
+#ifndef SRC_CONTEXTS_H_
+#define SRC_CONTEXTS_H_
+
+#include "base_types.h"
+#include "vmem.h"
+
+typedef struct {
+	// Order expected by assembly
+	SavedRegisters active_regs;
+	void *exception_handler_stack;  // One past end
+
+	// Additional data for C code
+	GuestThreadId current_guest;
+} HostThreadData;
+
+extern HostThreadData host_threads[MAX_PHYS_HARTS];
+
+__attribute__((unused)) inline static void set_host_thread_address(HostThreadData *ptr)
+{
+	w_mscratch((uintptr_t) ptr);
+}
+
+__attribute__((unused)) inline static HostThreadData *get_host_thread_address(void)
+{
+	return (HostThreadData*) r_mscratch();
+}
+
+#endif /* end of include guard: SRC_CONTEXTS_H_ */

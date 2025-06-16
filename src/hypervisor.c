@@ -4,11 +4,15 @@
 #include "exchandlers.h"
 #include "print.h"
 #include "panic.h"
+#include "contexts.h"
 
 uint8_t hypstack0[4096] = {};
 
 void boot_main(void)
 {
+	// Update host thread data if needed
+	host_threads[0].exception_handler_stack = hypstack0 + sizeof(hypstack0);
+	set_host_thread_address(&host_threads[0]);
 	// TODO
 }
 

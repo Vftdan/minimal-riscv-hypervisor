@@ -17,8 +17,9 @@ sync_h = $(SRC_DIR)/sync.h
 uart_h = $(SRC_DIR)/uart.h
 print_h = $(SRC_DIR)/print.h
 panic_h = $(SRC_DIR)/panic.h
+contexts_h = $(SRC_DIR)/contexts.h $(base_types_h) $(vmem_h)
 
-$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h)
+$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
@@ -39,5 +40,9 @@ $(BUILD_DIR)/print.o: $(SRC_DIR)/print.c $(print_h) $(uart_h)
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
 $(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h)
+	mkdir -p $(shell dirname "$@")
+	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
+
+$(BUILD_DIR)/contexts.o: $(SRC_DIR)/contexts.c $(contexts_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
