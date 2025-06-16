@@ -13,6 +13,13 @@ typedef struct {
 	GuestThreadId current_guest;
 } HostThreadData;
 
+typedef struct {
+	struct {
+		uint64_t mstatus_mpp : 2;
+	} csr;
+} GuestThreadContext;
+
+extern GuestThreadContext guest_threads[MAX_GUESTS][MAX_VIRT_HARTS];
 extern HostThreadData host_threads[MAX_PHYS_HARTS];
 
 __attribute__((unused)) inline static void set_host_thread_address(HostThreadData *ptr)
