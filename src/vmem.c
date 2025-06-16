@@ -11,7 +11,7 @@ PagetablePage machine_pagetable_roots[MAX_GUESTS] = {};
 _Static_assert(_Alignof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is not properly aligned");
 _Static_assert(sizeof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is of incorrect size");
 
-PageFaultHandlerResult handle_page_fault(MempermIndex access_type)
+PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
 	uintptr_t instr_addr = r_mepc();
@@ -29,6 +29,9 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type)
 	default:
 		print_string("\nInvalid page fault type");
 		panic();
+	}
+	if (virt_out) {
+		*virt_out = fault_addr;
 	}
 
 	if (fault_addr < 0x80000000) {

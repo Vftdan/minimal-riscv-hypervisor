@@ -97,7 +97,7 @@ void handle_guest_exception(uint64_t mcause)
 		}
 		break;
 	case 12: {  // Instruction page fault
-			switch (handle_page_fault(PERMIDX_X)) {
+			switch (handle_page_fault(PERMIDX_X, NULL)) {
 				UnpackedPagetableEntry unpacked;
 				HostThreadData *ctx;
 				uintptr_t addr;

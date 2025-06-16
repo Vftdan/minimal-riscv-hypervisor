@@ -78,6 +78,6 @@ typedef enum {
 	PFHR_TOO_HIGH,     // The virtual address is above the handled range
 } PageFaultHandlerResult;
 
-PageFaultHandlerResult handle_page_fault(MempermIndex access_type);
+PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out);
 
 #endif /* end of include guard: SRC_VMEM_H_ */
