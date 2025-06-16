@@ -39,7 +39,7 @@ $(BUILD_DIR)/print.o: $(SRC_DIR)/print.c $(print_h) $(uart_h)
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
-$(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h)
+$(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h) $(contexts_h) $(SRC_DIR)/registers.cc
 	mkdir -p $(shell dirname "$@")
 	$(CC) -c $< $(CPPFLAGS) $(CFLAGS) $(INCPATH) -o $@
 
