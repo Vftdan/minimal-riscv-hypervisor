@@ -41,9 +41,28 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 #include "csrs.cc"
 #undef DECLARE_CSR
 	}
-	print_string("\nSet emulated csr: ");
-	print_string(csr_name);
-	print_string("\nvalue = ");
-	print_addr(value);
-	panic();
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadId guest_thid = host_thr->current_guest;
+	GuestThreadContext *guest_thr = &guest_threads[guest_thid.machine][guest_thid.thread];
+
+	switch (csr_id) {
+	case CSR_mstatus: {
+			bool should_panic = false;
+			if (value & MSTATUS_MIE) {
+				print_string("\nEmulate machine-mode interrupt enable");
+				should_panic = true;
+			}
+			guest_thr->csr.mstatus_mpp = (value >> 11) & 3;
+			if (should_panic) {
+				panic();
+			}
+		}
+		break;
+	default:
+		print_string("\nSet emulated csr: ");
+		print_string(csr_name);
+		print_string("\nvalue = ");
+		print_addr(value);
+		panic();
+	}
 }

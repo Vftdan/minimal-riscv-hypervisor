@@ -68,6 +68,15 @@ void handle_guest_exception(uint64_t mcause)
 						return;
 					}
 					break;
+				case 1: {
+						// csrw
+						HostThreadData *ctx = get_host_thread_address();
+						uint64_t value = unpacked.rs1 ? ctx->active_regs.x_plus_one[unpacked.rs1 - 1] : 0;
+						set_virtual_csr(csr_id, value);
+						w_mepc(guest_addr + 4);  // Advance the program counter
+						return;
+					}
+					break;
 				}
 			}
 			print_string("\nGuest illegal instruction\ninstruction = ");
