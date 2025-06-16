@@ -160,6 +160,25 @@ void handle_guest_exception(uint64_t mcause)
 			}
 		}
 		break;
+	case 15: {  // Store page fault
+			uintptr_t virt_addr;
+			switch (handle_page_fault(PERMIDX_W, &virt_addr)) {
+			case PFHR_SUCCESS:
+				break;
+			case PFHR_TOO_LOW:
+				print_string("\nGuest store below RAM\ndestination address = ");
+				print_addr(virt_addr);
+				panic();
+			case PFHR_TOO_HIGH:
+				print_string("\nGuest store beyond Sv39\ndestination address = ");
+				print_addr(virt_addr);
+				panic();
+			case PFHR_NOT_CHANGED:
+				print_string("\nGuest unknown store page fault");
+				panic();
+			}
+		}
+		break;
 	default: {
 			print_string("\nUnhandled guest-caused exception\nmcause = ");
 			print_addr(mcause);

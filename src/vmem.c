@@ -45,8 +45,8 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 
 		switch (unpacked.opcode) {
 		case 0: {
-				int reg1 = 8 + (unpacked.rs2 & 7);
-				int reg2 = 8 + (unpacked.rs1 & 7);
+				int reg1 = 8 + (unpacked.rs2 & 7);  // data
+				int reg2 = 8 + (unpacked.rs1 & 7);  // address
 				int imm_6 = (unpacked.rs2 >> 3) & 1;
 				int imm_2_or_7 = (unpacked.rs2 >> 4);
 				int imm_5 = unpacked.funct4 & 1;
@@ -88,6 +88,81 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 	}
 }
 
+static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
+{
+	PackedInstruction packed = dereference_instruction(instr_ptr);
+	if ((packed.numeric_value & 3) == 3) {
+		if (pc_advance_out) {
+			*pc_advance_out = 4;
+		}
+		UnpackedInstruction unpacked = unpack_instruction(packed);
+		print_string("\nExtract destination address\ninstruction = ");
+		print_addr(packed.numeric_value);
+		print_string("\nopcode = ");
+		print_addr(unpacked.opcode);
+		print_string("\nrd = ");
+		print_addr(unpacked.rd);
+		print_string("\nfunct3 = ");
+		print_addr(unpacked.funct3);
+		print_string("\nrs1 = ");
+		print_addr(unpacked.rs1);
+		print_string("\nrs2 = ");
+		print_addr(unpacked.rs2);
+		print_string("\nfunct7 = ");
+		print_addr(unpacked.funct7);
+		panic();
+	} else {
+		if (pc_advance_out) {
+			*pc_advance_out = 2;
+		}
+		UnpackedCompressedInstruction unpacked = unpack_compressed_instruction(packed);
+		int funct3 = unpacked.funct4 >> 1;
+
+		switch (unpacked.opcode) {
+		case 0: {
+				int reg1 = 8 + (unpacked.rs2 & 7);  // data
+				int reg2 = 8 + (unpacked.rs1 & 7);  // address
+				int imm_6 = (unpacked.rs2 >> 3) & 1;
+				int imm_2_or_7 = (unpacked.rs2 >> 4);
+				int imm_5 = unpacked.funct4 & 1;
+				int imm_4 = unpacked.rs1 >> 4;
+				int imm_3_or_8 = (unpacked.rs1 >> 3) & 1;
+				uintptr_t reg_value = ctx->active_regs.x_plus_one[reg2 - 1];
+				if (reg_out) {
+					*reg_out = reg1;
+				}
+				switch (funct3) {
+					int imm;
+				case 6:  // C.SW
+					if (width_out) {
+						*width_out = MAW_32BIT;
+					}
+					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 2) | (imm_6 << 6);
+					return reg_value + imm;
+				case 7:  // C.SD
+					if (width_out) {
+						*width_out = MAW_64BIT;
+					}
+					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
+					return reg_value + imm;
+				}
+			}
+		}
+
+		print_string("\nExtract destination address\ninstruction = ");
+		print_addr(packed.compressed_numeric_value);
+		print_string("\ncompressed opcode = ");
+		print_addr(unpacked.opcode);
+		print_string("\nrs2 = ");
+		print_addr(unpacked.rs2);
+		print_string("\nrs1 = ");
+		print_addr(unpacked.rs1);
+		print_string("\nfunct4 = ");
+		print_addr(unpacked.funct4);
+		panic();
+	}
+}
+
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
@@ -101,8 +176,8 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		fault_addr = parse_source_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance);
 		break;
 	case PERMIDX_W:
-		print_string("\nStore page fault");
-		panic();
+		fault_addr = parse_destination_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance);
+		break;
 	case PERMIDX_X:
 		fault_addr = instr_addr;
 		rw_width = 4;
