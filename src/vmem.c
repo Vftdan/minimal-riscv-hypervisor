@@ -96,6 +96,42 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 			*pc_advance_out = 4;
 		}
 		UnpackedInstruction unpacked = unpack_instruction(packed);
+
+		switch (unpacked.opcode) {
+		case 0b0100011: {
+				int addr_reg = unpacked.rs1;
+				int data_reg = unpacked.rs2;
+				int imm = (unpacked.funct7 << 5) | unpacked.rd;
+				uintptr_t reg_value = addr_reg ? ctx->active_regs.x_plus_one[addr_reg - 1] : 0;
+				uintptr_t addr = reg_value + imm;
+				if (reg_out) {
+					*reg_out = data_reg;
+				}
+				switch (unpacked.funct3) {
+				case 0:
+					if (width_out) {
+						*width_out = MAW_8BIT;
+					}
+					return addr;
+				case 1:
+					if (width_out) {
+						*width_out = MAW_16BIT;
+					}
+					return addr;
+				case 2:
+					if (width_out) {
+						*width_out = MAW_32BIT;
+					}
+					return addr;
+				case 3:
+					if (width_out) {
+						*width_out = MAW_64BIT;
+					}
+					return addr;
+				}
+			}
+		}
+
 		print_string("\nExtract destination address\ninstruction = ");
 		print_addr(packed.numeric_value);
 		print_string("\nopcode = ");
