@@ -64,6 +64,11 @@ void handle_guest_exception(uint64_t mcause)
 								w_mepc(guest_addr + 4);  // Advance the program counter
 								return;
 							}
+						case 24:
+							if (unpacked.rs2 == 2 && unpacked.rs1 == 0 && unpacked.rd == 0) {
+								print_string("\nGuest mret");
+								panic();
+							}
 						}
 					}
 					break;
