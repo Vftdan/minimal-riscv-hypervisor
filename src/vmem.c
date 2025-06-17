@@ -289,8 +289,8 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	uintptr_t fault_addr;
 	MemoryAccessWidth rw_width;
 	int rw_reg = 0;
-	int pc_advance;
-	bool load_is_signed;
+	int pc_advance = 4;
+	bool load_is_signed = false;
 	switch (access_type) {
 	case PERMIDX_R:
 		fault_addr = parse_source_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance, &load_is_signed);
