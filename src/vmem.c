@@ -15,6 +15,7 @@ _Static_assert(sizeof(typeof(machine_pagetable_roots[0])) == 4096, "Page table t
 
 static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
 {
+	// FIXME: if anything about compressed instructions is signed, the code is incorrect
 	PackedInstruction packed = dereference_instruction(instr_ptr);
 	if ((packed.numeric_value & 3) == 3) {
 		if (pc_advance_out) {
@@ -90,6 +91,7 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 
 static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
 {
+	// FIXME: if anything about compressed instructions is signed, the code is incorrect
 	PackedInstruction packed = dereference_instruction(instr_ptr);
 	if ((packed.numeric_value & 3) == 3) {
 		if (pc_advance_out) {
@@ -101,7 +103,7 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 		case 0b0100011: {
 				int addr_reg = unpacked.rs1;
 				int data_reg = unpacked.rs2;
-				int imm = (unpacked.funct7 << 5) | unpacked.rd;
+				int imm = EXTEND_SIGN((unpacked.funct7 << 5) | unpacked.rd, 12);
 				uintptr_t reg_value = addr_reg ? ctx->active_regs.x_plus_one[addr_reg - 1] : 0;
 				uintptr_t addr = reg_value + imm;
 				if (reg_out) {
