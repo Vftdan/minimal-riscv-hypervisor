@@ -13,6 +13,26 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x10000001: {  // uart.ier
+			if (load_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			if (reg_ptr) {
+				*(uint8_t*) reg_ptr = 0;  // TODO
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x0C002000: {  // plic.context_source_enable_bits[0][0]
+			if (load_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			if (reg_ptr) {
+				*(uint32_t*) reg_ptr = 0;  // TODO
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
 	}
 	return VMMAR_UNKNOWN_ADDR;
 }
