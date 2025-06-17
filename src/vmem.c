@@ -22,6 +22,51 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 			*pc_advance_out = 4;
 		}
 		UnpackedInstruction unpacked = unpack_instruction(packed);
+
+		switch (unpacked.opcode) {
+		case 0b0000011: {
+				int addr_reg = unpacked.rs1;
+				int data_reg = unpacked.rd;
+				int imm = EXTEND_SIGN((unpacked.funct7 << 5) | unpacked.rs2, 12);
+				uintptr_t reg_value = addr_reg ? ctx->active_regs.x_plus_one[addr_reg - 1] : 0;
+				uintptr_t addr = reg_value + imm;
+				if (reg_out) {
+					*reg_out = data_reg;
+				}
+				switch (unpacked.funct3) {
+				case 0:  // int8_t
+					print_string("\nSigned load 8");
+					panic();
+				case 4:  // uint8_t
+					if (width_out) {
+						*width_out = MAW_8BIT;
+					}
+					return addr;
+				case 1:  // int16_t
+					print_string("\nSigned load 16");
+					panic();
+				case 5:  // uint16_t
+					if (width_out) {
+						*width_out = MAW_16BIT;
+					}
+					return addr;
+				case 2:  // int32_t
+					print_string("\nSigned load 32");
+					panic();
+				case 6:  // uint32_t
+					if (width_out) {
+						*width_out = MAW_32BIT;
+					}
+					return addr;
+				case 3:  // int64_t | uint64_t
+					if (width_out) {
+						*width_out = MAW_64BIT;
+					}
+					return addr;
+				}
+			}
+		}
+
 		print_string("\nExtract source address\ninstruction = ");
 		print_addr(packed.numeric_value);
 		print_string("\nopcode = ");
