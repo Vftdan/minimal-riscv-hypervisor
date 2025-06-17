@@ -250,6 +250,6 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	// Make sure to not set the G bit, because it might cause an undefined behavior when there are multiple harts
 	unpacked.permissions = PERMBIT(V) | PERMBIT(U) | PERMBIT(R) | PERMBIT(W) | PERMBIT(X);
 	*packed_ptr = pack_pt_entry(unpacked);  // Write the child-level entry
-	asm volatile("sfence.vma zero, zero");
+	vmem_fence(NULL, NULL);
 	return PFHR_SUCCESS;
 }

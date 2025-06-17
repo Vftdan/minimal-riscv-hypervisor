@@ -60,6 +60,7 @@ void handle_guest_exception(uint64_t mcause)
 						case 9:
 							if (unpacked.rd == 0) {
 								print_string("[Guest sfence.vma]");  // TODO
+								vmem_fence(NULL, NULL);
 								w_mepc(guest_addr + 4);  // Advance the program counter
 								return;
 							}

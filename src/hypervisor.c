@@ -43,7 +43,7 @@ void boot_main(void)
 #define SATP_SV39 (8L << 60)
 #define MAKE_SATP(ptptr) (SATP_SV39 | ((uint64_t)(ptptr) >> 12))
 		w_satp(MAKE_SATP(&machine_pagetable_roots[0][0]));
-		asm volatile("sfence.vma zero, zero");
+		vmem_fence(NULL, NULL);
 #undef MAKE_SATP
 #undef SATP_SV39
 	}

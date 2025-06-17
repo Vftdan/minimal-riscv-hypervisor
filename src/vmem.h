@@ -87,4 +87,17 @@ typedef enum {
 	MAW_64BIT = 8,
 } MemoryAccessWidth;
 
+__attribute__((unused)) inline static void vmem_fence(const uintptr_t *vaddr_ptr, const uint16_t *asid_ptr)
+{
+	if (!vaddr_ptr && !asid_ptr) {
+		asm volatile("sfence.vma zero, zero");
+	} else if (vaddr_ptr && !asid_ptr) {
+		asm volatile("sfence.vma %0, zero" : : "r" (*vaddr_ptr));
+	} else if (!vaddr_ptr && asid_ptr) {
+		asm volatile("sfence.vma zero, %0" : : "r" (*asid_ptr));
+	} else if (vaddr_ptr && asid_ptr) {
+		asm volatile("sfence.vma %0, %1" : : "r" (*vaddr_ptr), "r" (*asid_ptr));
+	}
+}
+
 #endif /* end of include guard: SRC_VMEM_H_ */
