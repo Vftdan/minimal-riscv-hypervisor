@@ -35,6 +35,12 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			if (guest_thr->csr.mie_msie) {
 				result |= MIE_MSIE;
 			}
+			if (guest_thr->csr.mie_mtie) {
+				result |= MIE_MTIE;
+			}
+			if (guest_thr->csr.mie_meie) {
+				result |= MIE_MEIE;
+			}
 			return result;
 		}
 		break;
@@ -95,7 +101,9 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 		break;
 	case CSR_mie: {
 			guest_thr->csr.mie_msie = !!(value & MIE_MSIE);
-			value &= ~(MIE_MSIE);
+			guest_thr->csr.mie_mtie = !!(value & MIE_MTIE);
+			guest_thr->csr.mie_meie = !!(value & MIE_MEIE);
+			value &= ~(MIE_MSIE | MIE_MTIE | MIE_MEIE);
 			if (value) {
 				print_string("\nUnhandled mie fields: ");
 				print_addr(value);

@@ -21,6 +21,8 @@ typedef struct {
 		uint64_t mstatus_mpp : 2;
 		uint64_t mstatus_mie : 1;
 		uint64_t mie_msie : 1;
+		uint64_t mie_mtie : 1;
+		uint64_t mie_meie : 1;
 		uint64_t satp_mode : 4;
 		uint64_t satp_ppn : 44;
 	} csr;
