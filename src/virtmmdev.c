@@ -1,5 +1,8 @@
 #include "virtmmdev.h"
 
+#include "print.h"
+#include "uart.h"
+
 VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, MemoryAccessWidth load_width)
 {
 	switch (virt_addr) {
@@ -29,6 +32,16 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 			}
 			if (reg_ptr) {
 				*(uint32_t*) reg_ptr = 0;  // TODO
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x10000005: {  // uart.lsr
+			if (load_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			if (reg_ptr) {
+				*(uint8_t*) reg_ptr = UART_LSR_THRE | UART_LSR_TEMT;
 			}
 			return VMMAR_SUCCESS;
 		}
@@ -82,6 +95,17 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			}
 			uint8_t value = reg_ptr ? *(uint8_t*) reg_ptr : 0;
 			(void) value;  // TODO
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x10000000: {  // uart.thr
+			if (store_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint8_t value = reg_ptr ? *(uint8_t*) reg_ptr : 0;
+			print_string("\e[0;92m");
+			print_string_slice(1, (char*) &value);
+			print_string("\e[0m");
 			return VMMAR_SUCCESS;
 		}
 		break;
