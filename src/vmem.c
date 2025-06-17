@@ -13,9 +13,11 @@ PagetablePage machine_pagetable_roots[MAX_GUESTS] = {};
 _Static_assert(_Alignof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is not properly aligned");
 _Static_assert(sizeof(typeof(machine_pagetable_roots[0])) == 4096, "Page table type is of incorrect size");
 
-static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
+static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out, bool *load_is_signed_out)
 {
-	// FIXME: if anything about compressed instructions is signed, the code is incorrect
+	if (load_is_signed_out) {
+		*load_is_signed_out = false;
+	}
 	PackedInstruction packed = dereference_instruction(instr_ptr);
 	if ((packed.numeric_value & 3) == 3) {
 		if (pc_advance_out) {
@@ -35,24 +37,30 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 				}
 				switch (unpacked.funct3) {
 				case 0:  // int8_t
-					print_string("\nSigned load 8");
-					panic();
+					if (load_is_signed_out) {
+						*load_is_signed_out = true;
+					}
+					// FALLTHROUGH
 				case 4:  // uint8_t
 					if (width_out) {
 						*width_out = MAW_8BIT;
 					}
 					return addr;
 				case 1:  // int16_t
-					print_string("\nSigned load 16");
-					panic();
+					if (load_is_signed_out) {
+						*load_is_signed_out = true;
+					}
+					// FALLTHROUGH
 				case 5:  // uint16_t
 					if (width_out) {
 						*width_out = MAW_16BIT;
 					}
 					return addr;
 				case 2:  // int32_t
-					print_string("\nSigned load 32");
-					panic();
+					if (load_is_signed_out) {
+						*load_is_signed_out = true;
+					}
+					// FALLTHROUGH
 				case 6:  // uint32_t
 					if (width_out) {
 						*width_out = MAW_32BIT;
@@ -108,12 +116,19 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 					if (width_out) {
 						*width_out = MAW_32BIT;
 					}
+					if (load_is_signed_out) {
+						// I haven't found it being said explicity
+						// But given that it's named `c.lw`, and not `c.lwu` I assume that it's signed
+						*load_is_signed_out = true;
+					}
+					// Immediate is zero-extended
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 2) | (imm_6 << 6);
 					return reg_value + imm;
 				case 3:  // C.LD
 					if (width_out) {
 						*width_out = MAW_64BIT;
 					}
+					// Immediate is zero-extended
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
 					return reg_value + imm;
 				}
@@ -136,7 +151,6 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 
 static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThreadData *ctx, MemoryAccessWidth *width_out, int *reg_out, int *pc_advance_out)
 {
-	// FIXME: if anything about compressed instructions is signed, the code is incorrect
 	PackedInstruction packed = dereference_instruction(instr_ptr);
 	if ((packed.numeric_value & 3) == 3) {
 		if (pc_advance_out) {
@@ -220,12 +234,14 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 					if (width_out) {
 						*width_out = MAW_32BIT;
 					}
+					// Immediate is zero-extended
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 2) | (imm_6 << 6);
 					return reg_value + imm;
 				case 7:  // C.SD
 					if (width_out) {
 						*width_out = MAW_64BIT;
 					}
+					// Immediate is zero-extended
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
 					return reg_value + imm;
 				}
@@ -246,6 +262,26 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 	}
 }
 
+static void reset_upper_bits(int64_t *reg_ptr, MemoryAccessWidth width, bool is_signed)
+{
+	if (!reg_ptr) {
+		return;
+	}
+	switch (width) {
+	case MAW_8BIT:
+		*reg_ptr = is_signed ? *(int8_t*) reg_ptr : *(uint8_t*) reg_ptr;
+		return;
+	case MAW_16BIT:
+		*reg_ptr = is_signed ? *(int16_t*) reg_ptr : *(uint16_t*) reg_ptr;
+		return;
+	case MAW_32BIT:
+		*reg_ptr = is_signed ? *(int32_t*) reg_ptr : *(uint32_t*) reg_ptr;
+		return;
+	case MAW_64BIT:
+		return;
+	}
+}
+
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
@@ -254,9 +290,10 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	MemoryAccessWidth rw_width;
 	int rw_reg = 0;
 	int pc_advance;
+	bool load_is_signed;
 	switch (access_type) {
 	case PERMIDX_R:
-		fault_addr = parse_source_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance);
+		fault_addr = parse_source_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance, &load_is_signed);
 		break;
 	case PERMIDX_W:
 		fault_addr = parse_destination_address((PackedInstruction*) (instr_addr + GUEST_MEMORY_OFFSET), ctx, &rw_width, &rw_reg, &pc_advance);
@@ -280,6 +317,7 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		switch (access_type) {
 		case PERMIDX_R:
 			if (virtual_mmdev_load(fault_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
+				reset_upper_bits((int64_t*) reg_ptr, rw_width, load_is_signed);  // If I understand correctly, lw and lwu reset the upper bits
 				w_mepc(instr_addr + pc_advance);
 				return PFHR_SUCCESS;
 			}
