@@ -269,13 +269,13 @@ static void reset_upper_bits(int64_t *reg_ptr, MemoryAccessWidth width, bool is_
 	}
 	switch (width) {
 	case MAW_8BIT:
-		*reg_ptr = is_signed ? *(int8_t*) reg_ptr : *(uint8_t*) reg_ptr;
+		*reg_ptr = is_signed ? (int64_t)*(int8_t*) reg_ptr : (uint64_t)*(uint8_t*) reg_ptr;
 		return;
 	case MAW_16BIT:
-		*reg_ptr = is_signed ? *(int16_t*) reg_ptr : *(uint16_t*) reg_ptr;
+		*reg_ptr = is_signed ? (int64_t)*(int16_t*) reg_ptr : (uint64_t)*(uint16_t*) reg_ptr;
 		return;
 	case MAW_32BIT:
-		*reg_ptr = is_signed ? *(int32_t*) reg_ptr : *(uint32_t*) reg_ptr;
+		*reg_ptr = is_signed ? (int64_t)*(int32_t*) reg_ptr : (uint64_t)*(uint32_t*) reg_ptr;
 		return;
 	case MAW_64BIT:
 		return;
