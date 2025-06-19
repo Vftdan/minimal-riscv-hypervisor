@@ -100,4 +100,7 @@ __attribute__((unused)) inline static void vmem_fence(const uintptr_t *vaddr_ptr
 	}
 }
 
+PagetablePage *allocate_pagepable(void);
+void deallocate_pagepable(PagetablePage *subtree);
+
 #endif /* end of include guard: SRC_VMEM_H_ */

@@ -345,15 +345,10 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	if (!(unpacked.permissions & PERMBIT(V))) {  // If there is no entry at the top-level table
 		// We only have reserved a fixed address for top-level (level 3) of the hierarchical page table
 		// So the child level (level 2) is allocated dynamically
-		MemoryPage *page = allocate_page();
-		if (!page) {
+		unpacked.child_table = allocate_pagepable();
+		if (!unpacked.child_table) {
 			print_string("\nFailed to allocate a page");
 			panic();
-		}
-		unpacked.resolved_range_start = page;  // The same pointer as .child_table, but of a non-specific MemoryPage type
-		for (int i = 0; i < 512; ++i) {
-			// Fill the new page with zeros, because its contents may be uninitialized or contain old data
-			(*unpacked.child_table)[i] = (PackedPagetableEntry) {};
 		}
 		unpacked.permissions = PERMBIT(V);
 		// Now store the child in the page table in the correct format
@@ -373,4 +368,42 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	*packed_ptr = pack_pt_entry(unpacked);  // Write the child-level entry
 	vmem_fence(NULL, NULL);
 	return PFHR_SUCCESS;
+}
+
+PagetablePage *allocate_pagepable(void)
+{
+	union {
+		PagetablePage *table;
+		MemoryPage *page;
+	} allocated;
+	allocated.page = allocate_page();
+	if (!allocated.page) {
+		return NULL;
+	}
+	for (int i = 0; i < 512; ++i) {
+		// Fill the new page with zeros, because its contents may be uninitialized or contain old data
+		(*allocated.table)[i] = (PackedPagetableEntry) {};
+	}
+	return allocated.table;
+}
+
+void deallocate_pagepable(PagetablePage *subtree)
+{
+	if (!subtree) {
+		return;
+	}
+	for (int i = 0; i < 512; ++i) {
+		UnpackedPagetableEntry unpacked = unpack_pt_entry((*subtree)[i]);
+		(*subtree)[i] = (PackedPagetableEntry) {};
+		if (!(unpacked.permissions & PERMBIT(V))) {
+			// Empty
+			continue;
+		}
+		if (unpacked.permissions & (PERMBIT(R) | PERMBIT(V) | PERMBIT(X))) {
+			// Does not store another level
+			continue;
+		}
+		deallocate_pagepable(unpacked.child_table);
+	}
+	deallocate_page((MemoryPage*) subtree);
 }
