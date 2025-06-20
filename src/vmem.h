@@ -3,6 +3,37 @@
 
 #include "base_types.h"
 
+typedef union {
+	uint64_t virtual_ptr;
+} CurrentGuestAddress;
+
+typedef struct {
+	union {
+		uint64_t virtual_ptr;
+		CurrentGuestAddress address;
+	};
+	size_t byte_length;
+} CurrentGuestSlice;
+
+typedef struct {
+	union {
+		struct {
+			union {
+				uint64_t virtual_ptr;
+				CurrentGuestAddress address;
+			};
+			uint64_t byte_length;
+		};
+		CurrentGuestSlice process_slice;
+	};
+	GuestThreadId thid;
+} GuestSlice;
+
+typedef struct {
+	void* address;
+	uint64_t byte_length;
+} HostSlice;
+
 // First guest should resolve guest ram_start to host (ram_start + GUEST_MEMORY_OFFSET)
 // It's also the offset at which the first kernel and its data should be loaded
 #define GUEST_MEMORY_OFFSET 0x5000000
@@ -102,5 +133,39 @@ __attribute__((unused)) inline static void vmem_fence(const uintptr_t *vaddr_ptr
 
 PagetablePage *allocate_pagepable(void);
 void deallocate_pagepable(PagetablePage *subtree);
+
+typedef struct {
+	GuestSlice guest;           // Guest-provided memory we want to iterate
+	bool success;               // Whether host address resolution & permission check was successful
+	MempermMask required_perm;  // Requires the guest to have these permissions for the addresses inside the slice
+	uint64_t offset;            // Advanced during iteration
+	HostSlice host;             // Resolved from the guest slice, current offset and required_perm
+} GuestSliceIterator;
+
+void resolve_guestmem_slice(GuestSliceIterator*);
+
+__attribute__((unused)) inline static GuestSliceIterator begin_iter_guestmem(GuestSlice slice, MempermMask mask)
+{
+	GuestSliceIterator it = {
+		.guest = slice,
+		.required_perm = mask,
+		.offset = 0,
+	};
+	resolve_guestmem_slice(&it);
+	return it;
+}
+
+__attribute__((unused)) inline static void advance_iter_guestmem(GuestSliceIterator* it)
+{
+	it->offset += it->host.byte_length;
+	resolve_guestmem_slice(it);
+}
+
+__attribute__((unused)) inline static bool ended_iter_guestmem(const GuestSliceIterator* it)
+{
+	if (!it->success)
+		return true;
+	return it->host.byte_length == 0;
+}
 
 #endif /* end of include guard: SRC_VMEM_H_ */
