@@ -45,8 +45,33 @@ void handle_guest_exception(uint64_t mcause)
 				print_string("\nGuest illegal instruction not in memory range");
 				panic();
 			}
-			uintptr_t host_addr = guest_addr + GUEST_MEMORY_OFFSET;
-			PackedInstruction packed = dereference_instruction((PackedInstruction*) host_addr);
+			PackedInstruction *host_addr;
+			{
+				HostThreadData *ctx = get_host_thread_address();
+				GuestSliceIterator it = begin_iter_guestmem((GuestSlice) {
+					.virtual_ptr = guest_addr,
+					.byte_length = 4,
+					.thid = ctx->current_guest
+				}, PERMBIT(X));
+				if (!it.success) {
+					print_string("\nFailed to resolve instruction actual address");
+					panic();
+				}
+				if (it.host.byte_length < 2) {
+					print_string("\nOdd instruction address");
+					panic();
+				}
+				unsigned int instr_size = 4;
+				if ((*(uint16_t*) it.host.address & 3) != 3) {
+					instr_size = 2;
+				}
+				if (it.host.byte_length < instr_size) {
+					print_string("\nMulti-page instruction");
+					panic();
+				}
+				host_addr = it.host.address;
+			}
+			PackedInstruction packed = dereference_instruction(host_addr);
 			UnpackedInstruction unpacked = unpack_instruction(packed);
 			if (unpacked.opcode == 0x73) {
 				// ecall, ebreak, csr manipulation
