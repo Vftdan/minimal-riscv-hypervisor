@@ -8,6 +8,7 @@
 #include "contexts.h"
 #include "instructions.h"
 #include "virtcsr.h"
+#include "guestprivilege.h"
 
 void handle_interrupt(uint64_t mcause)
 {
@@ -92,9 +93,10 @@ void handle_guest_exception(uint64_t mcause)
 							break;
 						case 24:
 							if (unpacked.rs2 == 2 && unpacked.rs1 == 0 && unpacked.rd == 0) {
-								print_string("\nGuest mret");
-								panic();
+								guest_mret();
+								return;
 							}
+							break;
 						}
 					}
 					break;
@@ -134,6 +136,8 @@ void handle_guest_exception(uint64_t mcause)
 			print_addr(unpacked.rs2);
 			print_string("\nfunct7 = ");
 			print_addr(unpacked.funct7);
+			print_string("\nvirt2phys(pc) = ");
+			print_addr((uintptr_t) host_addr);
 			panic();
 		}
 		break;

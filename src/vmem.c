@@ -339,15 +339,15 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		*virt_out = fault_addr;
 	}
 
-	// {
-	// 	GuestThreadContext *guest_ctx = &guest_threads[ctx->current_guest.machine][ctx->current_guest.thread];
-	// 	if (!guest_ctx->shadow_pt_active) {
-	// 		fault_gm_addr = fault_addr;
-	// 	} else {
-	// 		panic();  // TODO
-	// 	}
-	// }
-	fault_gm_addr = fault_addr;
+	{
+		GuestThreadContext *guest_ctx = &guest_threads[ctx->current_guest.machine][ctx->current_guest.thread];
+		if (!guest_ctx->shadow_pt_active) {
+			fault_gm_addr = fault_addr;
+		} else {
+			print_string("\nGU page fault");
+			panic();  // TODO
+		}
+	}
 
 	if (fault_gm_addr < 0x80000000) {
 		// Devices are mapped below RAM
@@ -464,18 +464,17 @@ void deallocate_pagepable(PagetablePage *subtree)
 
 void resolve_guestmem_slice(GuestSliceIterator *it)
 {
-	// GuestThreadContext *guest_ctx = &guest_threads[it->guest.thid.machine][it->guest.thid.thread];
+	GuestThreadContext *guest_ctx = &guest_threads[it->guest.thid.machine][it->guest.thid.thread];
 	PagetablePage *active_pt;
-	// {
-	// 	PagetablePage *machine_pt_root = &machine_pagetable_roots[it->guest.thid.machine];
-	// 	PagetablePage *shadow_pt_root = guest_ctx->shadow_page_table;
-	// 	active_pt = guest_ctx->shadow_pt_active ? shadow_pt_root : machine_pt_root;
-	// 	if (!active_pt) {
-	// 		print_string("\nNull page table");
-	// 		panic();
-	// 	}
-	// }
-	active_pt = &machine_pagetable_roots[it->guest.thid.machine];
+	{
+		PagetablePage *machine_pt_root = &machine_pagetable_roots[it->guest.thid.machine];
+		PagetablePage *shadow_pt_root = guest_ctx->shadow_page_table;
+		active_pt = guest_ctx->shadow_pt_active ? shadow_pt_root : machine_pt_root;
+		if (!active_pt) {
+			print_string("\nNull page table");
+			panic();
+		}
+	}
 	if (!active_pt) {
 		print_string("\nNull page table");
 		panic();
