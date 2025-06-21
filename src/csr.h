@@ -21,16 +21,24 @@ typedef enum {
 #include "csrs.cc"
 #undef DECLARE_CSR
 
-#define MSTATUS_MPP_MASK (3L << 11)  // Previous mode
-#define MSTATUS_MPP_M    (3L << 11)
-#define MSTATUS_MPP_S    (1L << 11)
-#define MSTATUS_MPP_U    (0L << 11)
-#define MSTATUS_MIE      (1L << 3)   // Machine-mode interrupt enable
+#define MSTATUS_MPP_MASK (3UL << 11)  // Previous mode
+#define MSTATUS_MPP_M    (3UL << 11)
+#define MSTATUS_MPP_S    (1UL << 11)
+#define MSTATUS_MPP_U    (0UL << 11)
+#define MSTATUS_MIE      (1UL << 3)   // Machine-mode interrupt enable
 
-#define MIE_MEIE (1L << 11)  // External
-#define MIE_MTIE (1L << 7)   // Timer
-#define MIE_MSIE (1L << 3)   // Software
+#define MIE_MEIE (1UL << 11)  // External
+#define MIE_MTIE (1UL << 7)   // Timer
+#define MIE_MSIE (1UL << 3)   // Software
 
 #define MCAUSE_ASYNC_BIT (1ULL << 63)
+
+#define SATP_MODE_SHIFT 60
+#define SATP_MODE_NONE  0
+#define SATP_MODE_SV39  (8ULL  << SATP_MODE_SHIFT)
+#define SATP_MODE_SV48  (9ULL  << SATP_MODE_SHIFT)
+#define SATP_MODE_SV57  (10ULL << SATP_MODE_SHIFT)
+#define SATP_MODE_SV64  (11ULL << SATP_MODE_SHIFT)
+#define MAKE_SATP(ptptr) (SATP_MODE_SV39 | ((uint64_t)(ptptr) >> 12))
 
 #endif /* end of include guard: SRC_CSR_H_ */
