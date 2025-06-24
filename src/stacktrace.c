@@ -1,3 +1,4 @@
+#ifdef USE_STACK_TRACE
 #include "stacktrace.h"
 
 #include "contexts.h"
@@ -15,3 +16,4 @@ void stack_trace_pop()
 	HostThreadData *ctx = get_host_thread_address();
 	ctx->stack_trace_caller = ctx->stack_trace_caller->caller;
 }
+#endif
