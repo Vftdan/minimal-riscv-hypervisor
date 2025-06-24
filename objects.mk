@@ -22,6 +22,7 @@ instructions_h = $(SRC_DIR)/instructions.h
 virtcsr_h = $(SRC_DIR)/virtcsr.h $(csr_h)
 virtmmdev_h = $(SRC_DIR)/virtmmdev.h $(vmem_h)
 guestprivilege_h = $(SRC_DIR)/guestprivilege.h
+stacktrace_h = $(SRC_DIR)/stacktrace.h
 
 $(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
 
@@ -33,7 +34,7 @@ $(BUILD_DIR)/pagealloc.o: $(SRC_DIR)/pagealloc.c $(pagealloc_h) $(sync_h)
 
 $(BUILD_DIR)/print.o: $(SRC_DIR)/print.c $(print_h) $(uart_h)
 
-$(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h) $(contexts_h) $(SRC_DIR)/registers.cc
+$(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h) $(contexts_h) $(stacktrace_h) $(SRC_DIR)/registers.cc
 
 $(BUILD_DIR)/contexts.o: $(SRC_DIR)/contexts.c $(contexts_h)
 
@@ -42,3 +43,5 @@ $(BUILD_DIR)/virtcsr.o: $(SRC_DIR)/virtcsr.c $(virtcsr_h) $(print_h) $(panic_h) 
 $(BUILD_DIR)/virtmmdev.o: $(SRC_DIR)/virtmmdev.c $(virtmmdev_h) $(print_h) $(uart_h)
 
 $(BUILD_DIR)/guestprivilege.o: $(SRC_DIR)/guestprivilege.c $(guestprivilege_h) $(contexts_h) $(print_h) $(panic_h)
+
+$(BUILD_DIR)/stacktrace.o: $(SRC_DIR)/stacktrace.c $(stacktrace_h) $(contexts_h)

@@ -9,7 +9,7 @@ BUILD_DIR=build
 QEMU=qemu-system-riscv64
 QEMUFLAGS=-nographic -machine virt -smp 1 -bios none -kernel
 
-HYPMODS=hypenterleave lto_required hypervisor exchandlers vmem pagealloc print panic contexts virtcsr virtmmdev guestprivilege
+HYPMODS=hypenterleave lto_required hypervisor exchandlers vmem pagealloc print panic contexts virtcsr virtmmdev guestprivilege stacktrace
 
 HYPOBJS:=$(foreach mod,$(HYPMODS),$(BUILD_DIR)/$(mod).o)
 
