@@ -286,6 +286,8 @@ static void reset_upper_bits(int64_t *reg_ptr, MemoryAccessWidth width, bool is_
 	}
 }
 
+static PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_t gm_addr, void **hm_addr_out);
+
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
@@ -349,35 +351,52 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		}
 	}
 
-	if (fault_gm_addr < 0x80000000) {
-		// Devices are mapped below RAM
-		uint64_t *reg_ptr = rw_reg ? &ctx->active_regs.x_plus_one[rw_reg - 1] : NULL;
-		switch (access_type) {
-		case PERMIDX_R:
-			if (virtual_mmdev_load(fault_gm_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
-				reset_upper_bits((int64_t*) reg_ptr, rw_width, load_is_signed);  // If I understand correctly, lw and lwu reset the upper bits
-				w_mepc(instr_addr + pc_advance);
-				return PFHR_SUCCESS;
+	switch (ensure_guest_machine_mapped(ctx, fault_gm_addr, NULL)) {
+	case PFHR_SUCCESS:
+		return PFHR_SUCCESS;
+	case PFHR_TOO_LOW: {
+			// Devices are mapped below RAM
+			uint64_t *reg_ptr = rw_reg ? &ctx->active_regs.x_plus_one[rw_reg - 1] : NULL;
+			switch (access_type) {
+			case PERMIDX_R:
+				if (virtual_mmdev_load(fault_gm_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
+					reset_upper_bits((int64_t*) reg_ptr, rw_width, load_is_signed);  // If I understand correctly, lw and lwu reset the upper bits
+					w_mepc(instr_addr + pc_advance);
+					return PFHR_SUCCESS;
+				}
+				break;
+			case PERMIDX_W:
+				if (virtual_mmdev_store(fault_gm_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
+					w_mepc(instr_addr + pc_advance);
+					return PFHR_SUCCESS;
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		case PERMIDX_W:
-			if (virtual_mmdev_store(fault_gm_addr, reg_ptr, rw_width) == VMMAR_SUCCESS) {
-				w_mepc(instr_addr + pc_advance);
-				return PFHR_SUCCESS;
-			}
-			break;
-		default:
-			break;
+			return PFHR_TOO_LOW;
 		}
+	case PFHR_TOO_HIGH:
+		return PFHR_TOO_HIGH;
+	case PFHR_NOT_CHANGED:
+		return PFHR_NOT_CHANGED;
+	default:
+		panic();
+	}
+}
+
+PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_t gm_addr, void **hm_addr_out)
+{
+	if (gm_addr < 0x80000000) {
 		return PFHR_TOO_LOW;
 	}
-	uint64_t lvl3 = fault_gm_addr >> 30;
+	uint64_t lvl3 = gm_addr >> 30;
 	if (lvl3 >= 512) {
 		return PFHR_TOO_HIGH;
 	}
 
 	// Level 3 entries don't seem to allow to resolve directly, so we also handle level 2
-	uint64_t lvl2 = (fault_gm_addr >> 21) & 0x1FF;
+	uint64_t lvl2 = (gm_addr >> 21) & 0x1FF;
 	// TODO use a mutex to avoid concurrent modification of page tables
 	UnpackedPagetableEntry unpacked = unpack_pt_entry(machine_pagetable_roots[ctx->current_guest.machine][lvl3]);
 	if (!(unpacked.permissions & PERMBIT(V))) {  // If there is no entry at the top-level table
@@ -410,6 +429,9 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	PackedPagetableEntry *packed_ptr = &(*unpacked.child_table)[lvl2];
 	unpacked = unpack_pt_entry(*packed_ptr);  // REASSIGN unpacked to the child level entry
 	if (unpacked.permissions & PERMBIT(V)) {
+		if (hm_addr_out) {
+			*hm_addr_out = &(*unpacked.resolved_range_start)[gm_addr & 0xFFF];
+		}
 		return PFHR_NOT_CHANGED;
 	}
 	// Base physical address of the mapping being initialized
@@ -421,6 +443,9 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	print_addr((lvl3 << 30) | (lvl2 << 21));
 	print_string("]");
 	vmem_fence(NULL, NULL);
+	if (hm_addr_out) {
+		*hm_addr_out = &(*unpacked.resolved_range_start)[gm_addr & 0xFFF];
+	}
 	return PFHR_SUCCESS;
 }
 
