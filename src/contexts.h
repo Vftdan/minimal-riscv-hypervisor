@@ -11,6 +11,7 @@ typedef struct {
 
 	// Additional data for C code
 	GuestThreadId current_guest;
+	struct stack_trace_entry *stack_trace_caller;
 } HostThreadData;
 
 typedef struct {
