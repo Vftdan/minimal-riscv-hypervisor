@@ -313,6 +313,108 @@ static void reset_upper_bits(int64_t *reg_ptr, MemoryAccessWidth width, bool is_
 
 static PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_t gm_addr, void **hm_addr_out);
 
+typedef struct {
+	uintptr_t gm_address;
+	MempermMask permissions : PERMSHIFT;
+} UnpackedGuestPagetableEntry;
+
+static bool try_resolve_gu_to_gm(GuestThreadContext *guest_ctx, HostThreadData *host_ctx, MempermIndex access_type, uintptr_t gu_addr, uintptr_t *gm_addr_out)
+{
+	(void) access_type;
+	uintptr_t ppn = guest_ctx->csr.satp_ppn;
+	uintptr_t guest_pt_root_guest = ppn << PGSHIFT;
+	UnpackedGuestPagetableEntry entry_guest = { .gm_address = guest_pt_root_guest, .permissions = PERMBIT(V) };
+	int component_offset = PGSHIFT + 9 + 9;
+	while (true) {
+		if (!(entry_guest.permissions & PERMBIT(V))) {
+			print_string("\nUnmapped page by the guest");
+			return false;
+		}
+		if (entry_guest.permissions & (PERMBIT(R) | PERMBIT(W) | PERMBIT(X))) {
+			if (!(entry_guest.permissions & PERMBIT(U))) {
+				print_string("\nNon-GU page");
+				return false;
+			}
+			// GM address
+			uint64_t pgsize = 1 << (component_offset + 9);
+			uint64_t pgoffset = gu_addr & (pgsize - 1);
+			if (gm_addr_out) {
+				*gm_addr_out = entry_guest.gm_address + pgoffset;
+			}
+			return true;
+		}
+		// Next page
+		if (component_offset <= PGSHIFT) {
+			print_string("\nNo RWX bits at the third-level guest pagetable entry");
+			return false;
+		}
+		PagetablePage *next_ptr;
+		switch (ensure_guest_machine_mapped(host_ctx, entry_guest.gm_address, &next_ptr)) {
+		case PFHR_SUCCESS:
+			break;  // Ensured, modified something
+		case PFHR_TOO_LOW:
+			print_string("\nGuest placed the page table level below RAM");
+			break;
+		case PFHR_TOO_HIGH:
+			print_string("\nGuest placed the page table level above the usable address space");
+			break;
+		case PFHR_NOT_CHANGED:
+			break;  // Ensured, modified nothing
+		}
+		int vpn_i = 511 & (gu_addr >> component_offset);
+		component_offset -= 9;
+		UnpackedPagetableEntry entry_wrong_type = unpack_pt_entry((*next_ptr)[vpn_i]);
+		entry_guest.gm_address = entry_wrong_type.numeric_address;
+		entry_guest.permissions = entry_wrong_type.permissions;
+	}
+}
+
+// TODO: calculate permissions by reading both input pagetables instead of updating them one by one
+static PageFaultHandlerResult update_shadow_pt(PagetablePage *shadow_pt_root, uintptr_t gu_addr, void *hm_addr, MempermIndex access_type)
+{
+	if ((gu_addr & 0xFFF) != ((uintptr_t) hm_addr & 0xFFF)) {
+		print_string("\nUnmatched gu and hm lower bits");
+		panic();
+	}
+	MemoryPage *hm_page = (MemoryPage*) ((uintptr_t) hm_addr & ~(intptr_t) PGOFFSET_MASK);
+	uint64_t vpn[3];
+	vpn[2] = gu_addr >> 30;
+	vpn[1] = (gu_addr >> 21) & 0x1FF;
+	vpn[0] = (gu_addr >> 12) & 0x1FF;
+	if (vpn[2] >= 512) {
+		return PFHR_TOO_HIGH;
+	}
+
+	PagetablePage *parent = shadow_pt_root;
+	for (int i = 2; i > 0; --i) {
+		UnpackedPagetableEntry unpacked = unpack_pt_entry(*parent[vpn[i]]);
+		if (!(unpacked.permissions & PERMBIT(V))) {
+			unpacked.child_table = allocate_pagepable();
+			if (!unpacked.child_table) {
+				print_string("\nFailed to allocate a shadow table page");
+				panic();
+			}
+			unpacked.permissions = PERMBIT(V);
+			*parent[vpn[i]] = pack_pt_entry(unpacked);
+		}
+		parent = unpacked.child_table;
+	}
+
+	UnpackedPagetableEntry leaf = unpack_pt_entry(*parent[vpn[0]]);
+	if (leaf.resolved_range_start != hm_page) {
+		leaf.resolved_range_start = hm_page;
+		leaf.permissions = PERMBIT(V) | PERMBIT(U);
+	}
+	MempermMask add_mask = _permbit_from_index(access_type);
+	if (leaf.permissions & add_mask) {
+		return PFHR_NOT_CHANGED;
+	}
+	leaf.permissions |= add_mask;
+	*parent[vpn[0]] = pack_pt_entry(leaf);
+	vmem_fence(NULL, NULL);
+	return PFHR_SUCCESS;
+}
+
 PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *virt_out)
 {
 	HostThreadData *ctx = get_host_thread_address();
@@ -366,18 +468,22 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		*virt_out = fault_addr;
 	}
 
-	{
-		GuestThreadContext *guest_ctx = &guest_threads[ctx->current_guest.machine][ctx->current_guest.thread];
-		if (!guest_ctx->shadow_pt_active) {
-			fault_gm_addr = fault_addr;
-		} else {
-			print_string("\nGU page fault");
-			panic();  // TODO
+	GuestThreadContext *guest_ctx = &guest_threads[ctx->current_guest.machine][ctx->current_guest.thread];
+	if (!guest_ctx->shadow_pt_active) {
+		fault_gm_addr = fault_addr;
+	} else {
+		if (!try_resolve_gu_to_gm(guest_ctx, ctx, access_type, fault_addr, &fault_gm_addr)) {
+			print_string("\nPropagate the page fault to GM");
+			panic();
 		}
 	}
 
-	switch (ensure_guest_machine_mapped(ctx, fault_gm_addr, NULL)) {
+	void *fault_hm_addr;
+	switch (ensure_guest_machine_mapped(ctx, fault_gm_addr, &fault_hm_addr)) {
 	case PFHR_SUCCESS:
+		if (guest_ctx->shadow_pt_active) {
+			return update_shadow_pt(guest_ctx->shadow_page_table, fault_addr, fault_hm_addr, access_type);
+		}
 		return PFHR_SUCCESS;
 	case PFHR_TOO_LOW: {
 			// Devices are mapped below RAM
@@ -404,6 +510,9 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 	case PFHR_TOO_HIGH:
 		return PFHR_TOO_HIGH;
 	case PFHR_NOT_CHANGED:
+		if (guest_ctx->shadow_pt_active) {
+			return update_shadow_pt(guest_ctx->shadow_page_table, fault_addr, fault_hm_addr, access_type);
+		}
 		return PFHR_NOT_CHANGED;
 	default:
 		panic();
