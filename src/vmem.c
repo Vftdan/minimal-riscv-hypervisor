@@ -75,6 +75,7 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 					}
 					return addr;
 				}
+				break;
 			}
 		}
 
@@ -136,6 +137,7 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
 					return reg_value + imm;
 				}
+				break;
 			}
 		}
 
@@ -194,6 +196,7 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 					}
 					return addr;
 				}
+				break;
 			}
 		}
 
@@ -249,6 +252,7 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 					imm = (imm_5 << 5) | (imm_4 << 4) | (imm_3_or_8 << 3) | (imm_2_or_7 << 7) | (imm_6 << 6);
 					return reg_value + imm;
 				}
+				break;
 			}
 		case 2: {
 				int data_reg = unpacked.rs2;
@@ -274,6 +278,7 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 					imm = (imm_unordered >> 3 << 3) | ((imm_unordered & 7) << 6);
 					return reg_value + imm;
 				}
+				break;
 			}
 		}
 
