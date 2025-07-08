@@ -591,7 +591,7 @@ void resolve_guestmem_slice(GuestSliceIterator *it)
 			return;
 		} else {
 			// Next page
-			if (component_offset <= PGSHIFT) {
+			if ((component_offset + 9) <= PGSHIFT) {
 				print_string("\nNo RWX bits at the third-level pagetable entry");
 				panic();
 			}
