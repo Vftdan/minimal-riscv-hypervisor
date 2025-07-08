@@ -250,6 +250,31 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 					return reg_value + imm;
 				}
 			}
+		case 2: {
+				int data_reg = unpacked.rs2;
+				int imm_unordered = unpacked.rs1 + ((unpacked.funct4 & 1) << 5);
+				uintptr_t reg_value = ctx->active_regs.sp;
+				if (reg_out) {
+					*reg_out = data_reg;
+				}
+				switch (funct3) {
+					int imm;
+				case 6:  // C.SWSP
+					if (width_out) {
+						*width_out = MAW_32BIT;
+					}
+					// Immediate is zero-extended
+					imm = (imm_unordered >> 2 << 2) | ((imm_unordered & 3) << 6);
+					return reg_value + imm;
+				case 7:  // C.SDSP
+					if (width_out) {
+						*width_out = MAW_64BIT;
+					}
+					// Immediate is zero-extended
+					imm = (imm_unordered >> 3 << 3) | ((imm_unordered & 7) << 6);
+					return reg_value + imm;
+				}
+			}
 		}
 
 		print_string("\nExtract destination address\ninstruction = ");
