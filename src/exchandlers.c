@@ -143,10 +143,6 @@ void handle_guest_exception(uint64_t mcause)
 		break;
 	case 12: {  // Instruction page fault
 			switch (handle_page_fault(PERMIDX_X, NULL)) {
-				UnpackedPagetableEntry unpacked;
-				HostThreadData *ctx;
-				uintptr_t addr;
-				uint64_t lvl2, lvl3;
 			case PFHR_SUCCESS:
 				break;
 			case PFHR_TOO_LOW:
@@ -157,22 +153,8 @@ void handle_guest_exception(uint64_t mcause)
 				panic();
 			case PFHR_NOT_CHANGED:
 				// We have a fault despite the page having been initialized
-				// TODO remove duplicate work
-				ctx = get_host_thread_address();
-				addr = r_mepc();
-				lvl3 = addr >> 30;
-				lvl2 = (addr >> 21) & 0x1FF;
-				unpacked = unpack_pt_entry(machine_pagetable_roots[ctx->current_guest.machine][lvl3]);
-				PackedPagetableEntry *packed_ptr = &(*unpacked.child_table)[lvl2];
-				unpacked = unpack_pt_entry(*packed_ptr);  // REASSIGN unpacked to the child level entry
-				print_string("\nGuest instruction page fault\nMapped to range from: ");
-				print_addr(unpacked.numeric_address);
-				print_string("\npermissions = ");
-				print_addr(unpacked.permissions);
-				print_string("\nfirst bytes in the range = ");
-				print_addr((*unpacked.child_table)[0].numeric_value);
-				print_string("\nguest machine = ");
-				print_addr(ctx->current_guest.machine);
+				print_string("\nGuest instruction page fault\nCurrent mode program counter = ");
+				print_addr(r_mepc());
 				panic();
 			}
 		}
