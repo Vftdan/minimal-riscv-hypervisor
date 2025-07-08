@@ -7,6 +7,7 @@
 #include "contexts.h"
 
 uint8_t hypstack0[4096] = {};
+uint8_t hypstack_nested[4096] = {};
 
 void boot_main(void)
 {
@@ -48,6 +49,9 @@ void boot_main(void)
 
 void exception(void)
 {
+	HostThreadData *ctx = get_host_thread_address();
+	uint8_t *current_stack = ctx->exception_handler_stack;
+	ctx->exception_handler_stack = hypstack_nested + sizeof(hypstack_nested);  // Do not overwrite the stack on which an error occured
 	uint64_t mcause = r_mcause();
 	if (mcause & MCAUSE_ASYNC_BIT) {
 		handle_interrupt(mcause);
@@ -59,4 +63,5 @@ void exception(void)
 			handle_guest_exception(mcause);
 		}
 	}
+	ctx->exception_handler_stack = current_stack;
 }
