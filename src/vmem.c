@@ -455,7 +455,7 @@ PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_
 	unpacked = unpack_pt_entry(*packed_ptr);  // REASSIGN unpacked to the child level entry
 	if (unpacked.permissions & PERMBIT(V)) {
 		if (hm_addr_out) {
-			*hm_addr_out = &(*unpacked.resolved_range_start)[gm_addr & 0xFFF];
+			*hm_addr_out = &unpacked.resolved_range_start[(gm_addr >> 12) & 0x1FF][gm_addr & 0xFFF];
 		}
 		return PFHR_NOT_CHANGED;
 	}
@@ -469,7 +469,7 @@ PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_
 	print_string("]");
 	vmem_fence(NULL, NULL);
 	if (hm_addr_out) {
-		*hm_addr_out = &(*unpacked.resolved_range_start)[gm_addr & 0xFFF];
+		*hm_addr_out = &unpacked.resolved_range_start[(gm_addr >> 12) & 0x1FF][gm_addr & 0xFFF];
 	}
 	return PFHR_SUCCESS;
 }
