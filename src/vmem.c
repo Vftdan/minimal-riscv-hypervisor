@@ -414,7 +414,7 @@ static PageFaultHandlerResult update_shadow_pt(PagetablePage *shadow_pt_root, ui
 	if (leaf.permissions & add_mask) {
 		return PFHR_NOT_CHANGED;
 	}
-	leaf.permissions |= add_mask;
+	leaf.permissions |= add_mask | PERMBIT(R);
 	(*parent)[vpn[0]] = pack_pt_entry(leaf);
 	vmem_fence(NULL, NULL);
 	return PFHR_SUCCESS;
