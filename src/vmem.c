@@ -392,7 +392,7 @@ static PageFaultHandlerResult update_shadow_pt(PagetablePage *shadow_pt_root, ui
 
 	PagetablePage *parent = shadow_pt_root;
 	for (int i = 2; i > 0; --i) {
-		UnpackedPagetableEntry unpacked = unpack_pt_entry(*parent[vpn[i]]);
+		UnpackedPagetableEntry unpacked = unpack_pt_entry((*parent)[vpn[i]]);
 		if (!(unpacked.permissions & PERMBIT(V))) {
 			unpacked.child_table = allocate_pagepable();
 			if (!unpacked.child_table) {
@@ -400,12 +400,12 @@ static PageFaultHandlerResult update_shadow_pt(PagetablePage *shadow_pt_root, ui
 				panic();
 			}
 			unpacked.permissions = PERMBIT(V);
-			*parent[vpn[i]] = pack_pt_entry(unpacked);
+			(*parent)[vpn[i]] = pack_pt_entry(unpacked);
 		}
 		parent = unpacked.child_table;
 	}
 
-	UnpackedPagetableEntry leaf = unpack_pt_entry(*parent[vpn[0]]);
+	UnpackedPagetableEntry leaf = unpack_pt_entry((*parent)[vpn[0]]);
 	if (leaf.resolved_range_start != hm_page) {
 		leaf.resolved_range_start = hm_page;
 		leaf.permissions = PERMBIT(V) | PERMBIT(U);
@@ -415,7 +415,7 @@ static PageFaultHandlerResult update_shadow_pt(PagetablePage *shadow_pt_root, ui
 		return PFHR_NOT_CHANGED;
 	}
 	leaf.permissions |= add_mask;
-	*parent[vpn[0]] = pack_pt_entry(leaf);
+	(*parent)[vpn[0]] = pack_pt_entry(leaf);
 	vmem_fence(NULL, NULL);
 	return PFHR_SUCCESS;
 }
