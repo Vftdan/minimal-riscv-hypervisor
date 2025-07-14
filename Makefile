@@ -8,6 +8,7 @@ BUILD_DIR=build
 
 QEMU=qemu-system-riscv64
 QEMUFLAGS=-nographic -machine virt -smp 1 -bios none -kernel
+include local.mk
 
 HYPMODS=hypenterleave lto_required hypervisor exchandlers vmem pagealloc print panic contexts virtcsr virtmmdev guestprivilege stacktrace
 
@@ -24,10 +25,10 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%
 include objects.mk
 
 run: $(BUILD_DIR)/hypervisor.bin
-	$(QEMU) $(QEMUFLAGS) ./$<
+	$(QEMU) $(QEMUFLAGS) ./$< $(QEMULOAD)
 
 debug: $(BUILD_DIR)/hypervisor.bin $(BUILD_DIR)/hypervisor
-	$(QEMU) $(QEMUFLAGS) ./$< -S -s
+	$(QEMU) $(QEMUFLAGS) ./$< -S -s $(QEMULOAD)
 
 clean:
 	-@rm $(HYPOBJS) $(BUILD_DIR)/hypervisor $(BUILD_DIR)/*.bin
