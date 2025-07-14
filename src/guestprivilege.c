@@ -37,8 +37,22 @@ void guest_mret(void)
 	print_string("\nGuest mret");
 }
 
-void guest_exception(void)
+void guest_exception(uint64_t mcause)
 {
-	print_string("\nGuest exception");
-	panic();
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	if (!guest_thr->user_mode) {
+		print_string("\nGM exception");
+		panic();
+	}
+	if (guest_thr->shadow_pt_active) {
+		guest_thr->shadow_pt_active = false;
+		w_satp(MAKE_SATP(&machine_pagetable_roots[host_thr->current_guest.machine][0]));
+		vmem_fence(NULL, NULL);
+	}
+	guest_thr->csr.mepc = r_mepc();
+	w_mepc(guest_thr->csr.mtvec);
+	guest_thr->user_mode = false;
+	guest_thr->csr.mcause = mcause;
+	guest_thr->csr.mtval = r_mtval();
 }

@@ -148,6 +148,10 @@ void handle_guest_exception(uint64_t mcause)
 			panic();
 		}
 		break;
+	case 8: {  // Ecall
+			guest_exception(mcause);
+		}
+		break;
 	case 12: {  // Instruction page fault
 			switch (handle_page_fault(PERMIDX_X, NULL)) {
 			case PFHR_SUCCESS:
