@@ -24,6 +24,8 @@ typedef struct {
 		uint64_t mtvec;
 		uint64_t mepc;
 		uint64_t mscratch;
+		uint64_t mcause;
+		uint64_t mtval;
 		uint64_t mstatus_mpp : 2;
 		uint64_t mstatus_mie : 1;
 		uint64_t mie_msie : 1;
