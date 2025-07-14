@@ -133,6 +133,7 @@ __attribute__((unused)) inline static void vmem_fence(const uintptr_t *vaddr_ptr
 
 PagetablePage *allocate_pagepable(void);
 void deallocate_pagepable(PagetablePage *subtree);
+void flush_shadow_pagetable(void);
 
 typedef struct {
 	GuestSlice guest;           // Guest-provided memory we want to iterate

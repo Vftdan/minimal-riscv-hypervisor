@@ -605,7 +605,7 @@ PagetablePage *allocate_pagepable(void)
 	return allocated.table;
 }
 
-void deallocate_pagepable(PagetablePage *subtree)
+static void deallocate_children(PagetablePage *subtree)
 {
 	if (!subtree) {
 		return;
@@ -623,7 +623,31 @@ void deallocate_pagepable(PagetablePage *subtree)
 		}
 		deallocate_pagepable(unpacked.child_table);
 	}
+}
+
+void deallocate_pagepable(PagetablePage *subtree)
+{
+	if (!subtree) {
+		return;
+	}
+	deallocate_children(subtree);
 	deallocate_page((MemoryPage*) subtree);
+}
+
+void flush_shadow_pagetable(void)
+{
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	PagetablePage *shadow_pt_root = guest_thr->shadow_page_table;
+	if (!shadow_pt_root) {
+		return;
+	}
+	deallocate_children(shadow_pt_root);
+	for (int i = 0; i < 512; ++i) {
+		// Replace dangling pointers with zeros
+		(*shadow_pt_root)[i] = (PackedPagetableEntry) {};
+	}
+	vmem_fence(NULL, NULL);
 }
 
 void resolve_guestmem_slice(GuestSliceIterator *it)
