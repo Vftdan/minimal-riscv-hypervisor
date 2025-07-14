@@ -166,6 +166,9 @@ void handle_guest_exception(uint64_t mcause)
 			}
 		}
 		break;
+	case 5:  // Load access fault
+		print_string("[Load access fault, trying to interpret as a page fault]");
+		// FALLTHROUGH
 	case 13: {  // Load page fault
 			uintptr_t virt_addr;
 			switch (handle_page_fault(PERMIDX_R, &virt_addr)) {
@@ -180,11 +183,15 @@ void handle_guest_exception(uint64_t mcause)
 				print_addr(virt_addr);
 				panic();
 			case PFHR_NOT_CHANGED:
-				print_string("\nGuest unknown load page fault");
+				print_string("\nGuest unknown load page fault, mtval = ");
+				print_addr(r_mtval());
 				panic();
 			}
 		}
 		break;
+	case 7:  // Store access fault
+		print_string("[Store access fault, trying to interpret as a page fault]");
+		// FALLTHROUGH
 	case 15: {  // Store page fault
 			uintptr_t virt_addr;
 			switch (handle_page_fault(PERMIDX_W, &virt_addr)) {
@@ -199,7 +206,8 @@ void handle_guest_exception(uint64_t mcause)
 				print_addr(virt_addr);
 				panic();
 			case PFHR_NOT_CHANGED:
-				print_string("\nGuest unknown store page fault");
+				print_string("\nGuest unknown store page fault, mtval = ");
+				print_addr(r_mtval());
 				panic();
 			}
 		}
