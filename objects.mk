@@ -24,7 +24,7 @@ virtmmdev_h = $(SRC_DIR)/virtmmdev.h $(vmem_h)
 guestprivilege_h = $(SRC_DIR)/guestprivilege.h
 stacktrace_h = $(SRC_DIR)/stacktrace.h
 
-$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h)
+$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h) $(stacktrace_h)
 
 $(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(contexts_h) $(instructions_h) $(virtcsr_h)
 

@@ -14,6 +14,7 @@ struct stack_trace_entry {
 
 void stack_trace_push_descr(const char *descr, StackTraceEntry *buffer);
 void stack_trace_pop();
+void stack_trace_clear();
 #define stack_trace_push_msg(msg, buffer) stack_trace_push_descr(MAKE_STACK_TRACE_ENTRY_DESCRIPTION(msg), buffer)
 #define stack_trace_push(buffer) stack_trace_push_descr(MAKE_STACK_TRACE_ENTRY_DESCRIPTION(""), buffer)
 
