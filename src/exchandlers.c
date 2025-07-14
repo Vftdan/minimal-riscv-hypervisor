@@ -100,22 +100,29 @@ void handle_guest_exception(uint64_t mcause)
 						}
 					}
 					break;
+				case 1: {
+						// csrrw
+						HostThreadData *ctx = get_host_thread_address();
+						if (unpacked.rd) {
+							uint64_t value = get_virtual_csr(csr_id);
+							ctx->active_regs.x_plus_one[unpacked.rd - 1] = value;
+						}
+						uint64_t value = unpacked.rs1 ? ctx->active_regs.x_plus_one[unpacked.rs1 - 1] : 0;
+						set_virtual_csr(csr_id, value);
+						w_mepc(guest_addr + 4);  // Advance the program counter
+						return;
+					}
+					break;
 				case 2: {
-						// csrr
+						// csrrs
 						HostThreadData *ctx = get_host_thread_address();
 						uint64_t value = get_virtual_csr(csr_id);
 						if (unpacked.rd) {
 							ctx->active_regs.x_plus_one[unpacked.rd - 1] = value;
 						}
-						w_mepc(guest_addr + 4);  // Advance the program counter
-						return;
-					}
-					break;
-				case 1: {
-						// csrw
-						HostThreadData *ctx = get_host_thread_address();
-						uint64_t value = unpacked.rs1 ? ctx->active_regs.x_plus_one[unpacked.rs1 - 1] : 0;
-						set_virtual_csr(csr_id, value);
+						if (unpacked.rs1) {
+							set_virtual_csr(csr_id, value | ctx->active_regs.x_plus_one[unpacked.rs1 - 1]);
+						}
 						w_mepc(guest_addr + 4);  // Advance the program counter
 						return;
 					}
