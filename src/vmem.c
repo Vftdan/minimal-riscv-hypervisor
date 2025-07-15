@@ -139,6 +139,32 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 				}
 				break;
 			}
+		case 2: {
+				int data_reg = unpacked.rs1;
+				int imm_unordered = unpacked.rs2 + ((unpacked.funct4 & 1) << 5);
+				uintptr_t reg_value = ctx->active_regs.sp;
+				if (reg_out) {
+					*reg_out = data_reg;
+				}
+				switch (funct3) {
+					int imm;
+				case 2:  // C.LWSP
+					if (width_out) {
+						*width_out = MAW_32BIT;
+					}
+					// Immediate is zero-extended
+					imm = (imm_unordered >> 2 << 2) | ((imm_unordered & 3) << 6);
+					return reg_value + imm;
+				case 3:  // C.LDSP
+					if (width_out) {
+						*width_out = MAW_64BIT;
+					}
+					// Immediate is zero-extended
+					imm = (imm_unordered >> 3 << 3) | ((imm_unordered & 7) << 6);
+					return reg_value + imm;
+				}
+				break;
+			}
 		}
 
 		print_string("\nExtract source address\ninstruction = ");
