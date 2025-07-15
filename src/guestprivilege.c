@@ -13,8 +13,6 @@ void guest_mret(void)
 		panic();
 	}
 	guest_thr->user_mode = true;
-	print_string("\nSetting mepc to GU address ");
-	print_addr(guest_thr->csr.mepc);
 	w_mepc(guest_thr->csr.mepc);
 	switch ((uint64_t) guest_thr->csr.satp_mode << SATP_MODE_SHIFT) {
 	case SATP_MODE_NONE:  // GM didn't enable paging
@@ -33,8 +31,6 @@ void guest_mret(void)
 		print_addr(guest_thr->csr.satp_mode);
 		panic();
 	}
-
-	print_string("\nGuest mret");
 }
 
 void guest_exception(uint64_t mcause)
