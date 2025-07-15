@@ -631,7 +631,7 @@ PagetablePage *allocate_pagepable(void)
 	return allocated.table;
 }
 
-static void deallocate_children(PagetablePage *subtree)
+static void clear_pagetable(PagetablePage *subtree)
 {
 	if (!subtree) {
 		return;
@@ -656,7 +656,7 @@ void deallocate_pagepable(PagetablePage *subtree)
 	if (!subtree) {
 		return;
 	}
-	deallocate_children(subtree);
+	clear_pagetable(subtree);
 	deallocate_page((MemoryPage*) subtree);
 }
 
@@ -668,11 +668,7 @@ void flush_shadow_pagetable(void)
 	if (!shadow_pt_root) {
 		return;
 	}
-	deallocate_children(shadow_pt_root);
-	for (int i = 0; i < 512; ++i) {
-		// Replace dangling pointers with zeros
-		(*shadow_pt_root)[i] = (PackedPagetableEntry) {};
-	}
+	clear_pagetable(shadow_pt_root);
 	vmem_fence(NULL, NULL);
 }
 
