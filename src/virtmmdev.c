@@ -6,6 +6,16 @@
 VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, MemoryAccessWidth load_width)
 {
 	switch (virt_addr) {
+	case 0x02004000: {  // clint.harts[0].mtimecmp
+			if (load_width != MAW_64BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			if (reg_ptr) {
+				*(uint64_t*) reg_ptr = 0;  // TODO
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
 	case 0x0200BFF8: {  // clint.mtime
 			if (load_width != MAW_64BIT) {
 				return VMMAR_BAD_ACCESS;
