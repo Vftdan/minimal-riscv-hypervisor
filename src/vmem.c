@@ -643,7 +643,7 @@ static void deallocate_children(PagetablePage *subtree)
 			// Empty
 			continue;
 		}
-		if (unpacked.permissions & (PERMBIT(R) | PERMBIT(V) | PERMBIT(X))) {
+		if (unpacked.permissions & (PERMBIT(R) | PERMBIT(W) | PERMBIT(X))) {
 			// Does not store another level
 			continue;
 		}
