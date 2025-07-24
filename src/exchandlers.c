@@ -112,6 +112,7 @@ void handle_guest_exception(uint64_t mcause)
 							ctx->active_regs.x_plus_one[unpacked.rd - 1] = old_value;
 						}
 						w_mepc(guest_addr + 4);  // Advance the program counter
+						guest_check_deferred();
 						return;
 					}
 					break;
@@ -126,6 +127,7 @@ void handle_guest_exception(uint64_t mcause)
 							set_virtual_csr(csr_id, value | ctx->active_regs.x_plus_one[unpacked.rs1 - 1]);
 						}
 						w_mepc(guest_addr + 4);  // Advance the program counter
+						guest_check_deferred();
 						return;
 					}
 					break;

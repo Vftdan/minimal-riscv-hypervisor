@@ -27,6 +27,9 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			if (guest_thr->csr.mstatus_mie) {
 				result |= MSTATUS_MIE;
 			}
+			if (guest_thr->csr.mstatus_mdt) {
+				result |= MSTATUS_MDT;
+			}
 			return result;
 		}
 		break;
@@ -102,6 +105,10 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 			bool should_panic = false;
 			guest_thr->csr.mstatus_mpp = (value >> 11) & 3;
 			guest_thr->csr.mstatus_mie = !!(value & MSTATUS_MIE);
+			if (value & MSTATUS_MDT) {
+				guest_thr->csr.mstatus_mdt = true;
+			}
+			// We seem to need to unset MDT if MIE is being set, but unsetting MDT not being atomic with mret sounds dangerous
 			if (should_panic) {
 				panic();
 			}

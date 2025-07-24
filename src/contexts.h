@@ -20,6 +20,8 @@ typedef struct {
 	PagetablePage *shadow_page_table;  // Guest virtual to host physical
 	bool shadow_pt_active;
 	bool user_mode;
+	bool deferred_exception;
+	uint64_t deferred_mcause;
 	struct {
 		uint64_t mtvec;
 		uint64_t mepc;
@@ -28,6 +30,7 @@ typedef struct {
 		uint64_t mtval;
 		uint64_t mstatus_mpp : 2;
 		uint64_t mstatus_mie : 1;
+		uint64_t mstatus_mdt : 1;
 		uint64_t mie_msie : 1;
 		uint64_t mie_mtie : 1;
 		uint64_t mie_meie : 1;

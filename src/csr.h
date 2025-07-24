@@ -26,6 +26,7 @@ typedef enum {
 #define MSTATUS_MPP_S    (1UL << 11)
 #define MSTATUS_MPP_U    (0UL << 11)
 #define MSTATUS_MIE      (1UL << 3)   // Machine-mode interrupt enable
+#define MSTATUS_MDT      (1UL << 42)  // Machine-mode disable trap
 
 #define MIE_MEIE (1UL << 11)  // External
 #define MIE_MTIE (1UL << 7)   // Timer
