@@ -3,6 +3,8 @@
 #include "print.h"
 #include "uart.h"
 
+static volatile UartRegisters *uart0 = (volatile UartRegisters*) 0x10000000;
+
 VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, MemoryAccessWidth load_width)
 {
 	switch (virt_addr) {
@@ -51,7 +53,21 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 				return VMMAR_BAD_ACCESS;
 			}
 			if (reg_ptr) {
-				*(uint8_t*) reg_ptr = UART_LSR_THRE | UART_LSR_TEMT;
+				uint8_t actual = uart0->lsr;
+				uint8_t result = UART_LSR_THRE | UART_LSR_TEMT;
+				result |= actual & UART_LSR_DR;
+				*(uint8_t*) reg_ptr = result;
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x10000000: {  // uart.rbr
+			if (load_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint8_t result = uart0->rbr;
+			if (reg_ptr) {
+				*(uint8_t*) reg_ptr = result;
 			}
 			return VMMAR_SUCCESS;
 		}
