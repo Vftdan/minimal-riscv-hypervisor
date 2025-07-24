@@ -54,6 +54,7 @@ void exception(void)
 	HostThreadData *ctx = get_host_thread_address();
 	uint8_t *current_stack = ctx->exception_handler_stack;
 	ctx->exception_handler_stack = hypstack_nested + sizeof(hypstack_nested);  // Do not overwrite the stack on which an error occured
+	timer_suspend_virtual();
 	uint64_t mcause = r_mcause();
 	if (mcause & MCAUSE_ASYNC_BIT) {
 		handle_interrupt(mcause);
@@ -65,6 +66,7 @@ void exception(void)
 			handle_guest_exception(mcause);
 		}
 	}
+	timer_resume_virtual();
 	timer_reschedule();
 	ctx->exception_handler_stack = current_stack;
 #ifdef USE_STACK_TRACE

@@ -23,6 +23,8 @@ typedef struct {
 	bool timer_scheduled;
 	bool deferred_exception;
 	uint64_t timer_deadline;
+	uint64_t timer_suspended_at;
+	uint64_t timer_adjustment;
 	uint64_t deferred_mcause;
 	struct {
 		uint64_t mtvec;

@@ -23,6 +23,13 @@ uint64_t timer_get_time(void)
 	return clint0->mtime;
 }
 
+uint64_t timer_get_time_virtual(void)
+{
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	return clint0->mtime - guest_thr->timer_adjustment;
+}
+
 void timer_interrupt_at(uint64_t deadline)
 {
 	clint0->mtimecmp = deadline;
@@ -50,7 +57,7 @@ void timer_reschedule(void)
 		for (int j = 0; j < MAX_VIRT_HARTS; ++j) {
 			GuestThreadContext *guest_thr = &guest_threads[i][j];
 			if (guest_thr->timer_scheduled) {
-				if (timer_interrupt_sooner(guest_thr->timer_deadline)) {
+				if (timer_interrupt_sooner(guest_thr->timer_deadline + guest_thr->timer_adjustment)) {
 					interrupt_target = (GuestThreadId) {i, j};
 				}
 			}
@@ -72,4 +79,20 @@ void timer_on_interrupt(void)
 	guest_thr->timer_scheduled = false;
 
 	guest_defer_exception(MCAUSE_ASYNC_BIT | MCAUSE_ASYNC_TIMER);
+}
+
+void timer_suspend_virtual(void)
+{
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	guest_thr->timer_suspended_at = clint0->mtime;
+}
+
+void timer_resume_virtual(void)
+{
+	const int additional_cycles = 50;  // lower estimate of how many cycles is spent between the interrupt and timer_suspend_virtual + timer_resume_virtual and mret
+
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	guest_thr->timer_adjustment += clint0->mtime - guest_thr->timer_suspended_at + additional_cycles;
 }

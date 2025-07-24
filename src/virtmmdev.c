@@ -27,7 +27,7 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 				return VMMAR_BAD_ACCESS;
 			}
 			if (reg_ptr) {
-				*(uint64_t*) reg_ptr = timer_get_time();
+				*(uint64_t*) reg_ptr = timer_get_time_virtual();
 			}
 			return VMMAR_SUCCESS;
 		}
