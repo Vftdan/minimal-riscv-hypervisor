@@ -96,6 +96,13 @@ void handle_guest_exception(uint64_t mcause)
 								return;
 							}
 							break;
+						case 8:
+							if (unpacked.rs2 == 5 && unpacked.rs1 == 0 && unpacked.rd == 0) {
+								// WFI
+								asm volatile("wfi");  // TODO yield to another guest
+								return;
+							}
+							break;
 						}
 					}
 					break;
