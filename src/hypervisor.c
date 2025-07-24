@@ -5,6 +5,7 @@
 #include "print.h"
 #include "panic.h"
 #include "contexts.h"
+#include "timer.h"
 #include "stacktrace.h"
 
 uint8_t hypstack0[4096] = {};
@@ -64,6 +65,7 @@ void exception(void)
 			handle_guest_exception(mcause);
 		}
 	}
+	timer_reschedule();
 	ctx->exception_handler_stack = current_stack;
 #ifdef USE_STACK_TRACE
 	stack_trace_clear();  // Clean up returns and breaks bypassing stack trace updates

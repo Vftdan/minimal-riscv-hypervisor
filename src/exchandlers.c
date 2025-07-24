@@ -9,13 +9,13 @@
 #include "instructions.h"
 #include "virtcsr.h"
 #include "guestprivilege.h"
+#include "timer.h"
 
 void handle_interrupt(uint64_t mcause)
 {
 	switch (mcause & ~MCAUSE_ASYNC_BIT) {
-	case 7: {
-			// TODO reschedule the timer (clint)
-			// TODO handle timer interrupt
+	case MCAUSE_ASYNC_TIMER: {
+			timer_on_interrupt();
 		}
 		break;
 	case 11: {

@@ -2,6 +2,8 @@
 
 #include "print.h"
 #include "uart.h"
+#include "timer.h"
+#include "contexts.h"
 
 static volatile UartRegisters *uart0 = (volatile UartRegisters*) 0x10000000;
 
@@ -13,7 +15,9 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 				return VMMAR_BAD_ACCESS;
 			}
 			if (reg_ptr) {
-				*(uint64_t*) reg_ptr = 0;  // TODO
+				HostThreadData *host_thr = get_host_thread_address();
+				GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+				*(uint64_t*) reg_ptr = guest_thr->timer_deadline;
 			}
 			return VMMAR_SUCCESS;
 		}
@@ -23,7 +27,7 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 				return VMMAR_BAD_ACCESS;
 			}
 			if (reg_ptr) {
-				*(uint64_t*) reg_ptr = 0;  // TODO
+				*(uint64_t*) reg_ptr = timer_get_time();
 			}
 			return VMMAR_SUCCESS;
 		}
@@ -84,7 +88,10 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 				return VMMAR_BAD_ACCESS;
 			}
 			uint64_t value = reg_ptr ? *(uint64_t*) reg_ptr : 0;
-			(void) value;  // TODO
+			HostThreadData *host_thr = get_host_thread_address();
+			GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+			guest_thr->timer_deadline = value;
+			guest_thr->timer_scheduled = true;
 			return VMMAR_SUCCESS;
 		}
 		break;

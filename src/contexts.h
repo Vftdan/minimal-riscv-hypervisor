@@ -20,7 +20,9 @@ typedef struct {
 	PagetablePage *shadow_page_table;  // Guest virtual to host physical
 	bool shadow_pt_active;
 	bool user_mode;
+	bool timer_scheduled;
 	bool deferred_exception;
+	uint64_t timer_deadline;
 	uint64_t deferred_mcause;
 	struct {
 		uint64_t mtvec;

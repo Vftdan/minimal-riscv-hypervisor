@@ -33,6 +33,7 @@ typedef enum {
 #define MIE_MSIE (1UL << 3)   // Software
 
 #define MCAUSE_ASYNC_BIT (1ULL << 63)
+#define MCAUSE_ASYNC_TIMER 7
 
 #define SATP_MODE_SHIFT 60
 #define SATP_MODE_NONE  0
