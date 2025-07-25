@@ -196,6 +196,15 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x10000002: {  // uart.fcr
+			if (store_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint8_t value = reg_ptr ? *(uint8_t*) reg_ptr : 0;
+			(void) value;  // Do not configure virtual FIFO
+			return VMMAR_SUCCESS;
+		}
+		break;
 	}
 	return VMMAR_UNKNOWN_ADDR;
 }
