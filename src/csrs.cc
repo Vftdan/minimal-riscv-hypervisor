@@ -4,6 +4,18 @@
 
 #ifdef DECLARE_CSR
 
+DECLARE_CSR(0x100, sstatus)
+DECLARE_CSR(0x105, stvec)
+DECLARE_CSR(0x106, scounteren)
+
+DECLARE_CSR(0x10A, senvcfg)
+
+DECLARE_CSR(0x140, sscratch)
+DECLARE_CSR(0x141, sepc)
+DECLARE_CSR(0x142, scause)
+DECLARE_CSR(0x143, stval)
+DECLARE_CSR(0x144, sip)
+
 DECLARE_CSR(0x180, satp)
 
 DECLARE_CSR(0xF11, mvendorid)
