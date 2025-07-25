@@ -37,6 +37,12 @@ typedef struct {
 #define UART_IIR_RLS  (3 << 1)  // Receiver Line Status
 #define UART_IIR_TOI  (6 << 1)  // Character Timeout Indicator
 
+#define UART_LCR_8bpB (3 << 0)  // Values 0..3 indicate 5..8 bits per byte
+#define UART_LCR_2STP (1 << 2)  // Use 2 stop bits instead of 1
+#define UART_LCR_PAR  (7 << 3)  // Parity mode
+#define UART_LCR_BSE  (1 << 6)  // Break Signal Enabled
+#define UART_LCR_DLAB (1 << 7)  // Divisor Latch Access Bit
+
 #define UART_LSR_DR   (1 << 0)  // Data Ready
 #define UART_LSR_OE   (1 << 1)  // Overrun Error
 #define UART_LSR_PE   (1 << 2)  // Parity Error

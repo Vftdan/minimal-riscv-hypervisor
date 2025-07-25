@@ -43,8 +43,15 @@ typedef struct {
 	} csr;
 } GuestThreadContext;
 
+typedef struct {
+	struct {
+		bool dlab;
+	} uart;
+} GuestMachineData;
+
 extern GuestThreadContext guest_threads[MAX_GUESTS][MAX_VIRT_HARTS];
 extern HostThreadData host_threads[MAX_PHYS_HARTS];
+extern GuestMachineData guest_machines[MAX_GUESTS];
 
 __attribute__((unused)) inline static void set_host_thread_address(HostThreadData *ptr)
 {
