@@ -84,6 +84,9 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 	default:
 		print_string("\nGet emulated csr: ");
 		print_string(csr_name);
+		print_string(" (");
+		print_addr(csr_id);
+		print_string(")");
 		panic();
 	}
 }
@@ -158,6 +161,9 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	default:
 		print_string("\nSet emulated csr: ");
 		print_string(csr_name);
+		print_string(" (");
+		print_addr(csr_id);
+		print_string(")");
 		print_string("\nvalue = ");
 		print_addr(value);
 		panic();
