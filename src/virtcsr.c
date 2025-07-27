@@ -51,6 +51,10 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			return guest_thr->csr.mtvec;
 		}
 		break;
+	case CSR_stvec: {
+			return guest_thr->csr.stvec;
+		}
+		break;
 	case CSR_satp: {
 			uint64_t result = 0;
 			uint64_t mode = guest_thr->csr.satp_mode;
@@ -94,6 +98,10 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 		}
 		break;
 	case CSR_mip: {
+			return 0;  //TODO
+		}
+		break;
+	case CSR_sip: {
 			return 0;  //TODO
 		}
 		break;
@@ -149,6 +157,10 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 			guest_thr->csr.mtvec = value;
 		}
 		break;
+	case CSR_stvec: {
+			guest_thr->csr.stvec = value;
+		}
+		break;
 	case CSR_satp: {
 			guest_thr->csr.satp_ppn = EXTRACT_BITS(value, 0, 44);
 			guest_thr->csr.satp_mode = EXTRACT_BITS(value, 60, 4);
@@ -183,6 +195,10 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 		}
 		break;
 	case CSR_mip: {
+			(void) value;  //TODO
+		}
+		break;
+	case CSR_sip: {
 			(void) value;  //TODO
 		}
 		break;
