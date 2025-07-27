@@ -93,6 +93,10 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			return guest_thr->csr.mideleg;
 		}
 		break;
+	case CSR_mip: {
+			return 0;  //TODO
+		}
+		break;
 	default:
 		print_string("\nGet emulated csr: ");
 		print_string(csr_name);
@@ -176,6 +180,10 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 		break;
 	case CSR_mideleg: {
 			guest_thr->csr.mideleg = value;
+		}
+		break;
+	case CSR_mip: {
+			(void) value;  //TODO
 		}
 		break;
 	default:
