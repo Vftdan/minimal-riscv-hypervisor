@@ -19,6 +19,7 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 	GuestThreadContext *guest_thr = &guest_threads[guest_thid.machine][guest_thid.thread];
 
 	switch (csr_id) {
+	case CSR_sstatus:
 	case CSR_mstatus: {
 			uint64_t result = 0;
 			uint64_t uxl = 2;  // Guest user mode is always 64-bit
@@ -128,6 +129,7 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	GuestThreadContext *guest_thr = &guest_threads[guest_thid.machine][guest_thid.thread];
 
 	switch (csr_id) {
+	case CSR_sstatus:
 	case CSR_mstatus: {
 			bool should_panic = false;
 			guest_thr->csr.mstatus_mpp = (value >> 11) & 3;
