@@ -126,6 +126,15 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x0C000004: {  // plic.source_priorities[1]
+			if (store_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint32_t value = reg_ptr ? *(uint32_t*) reg_ptr : 0;
+			(void) value;  // TODO
+			return VMMAR_SUCCESS;
+		}
+		break;
 	case 0x0C000028: {  // plic.source_priorities[UART_IRQ = 10]
 			if (store_width != MAW_32BIT) {
 				return VMMAR_BAD_ACCESS;
@@ -144,7 +153,25 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x0C002080: {  // plic.context_source_enable_bits[1][0]
+			if (store_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint32_t value = reg_ptr ? *(uint32_t*) reg_ptr : 0;
+			(void) value;  // TODO
+			return VMMAR_SUCCESS;
+		}
+		break;
 	case 0x0C200000: {  // plic.contexts[0].priority_threshold
+			if (store_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint32_t value = reg_ptr ? *(uint32_t*) reg_ptr : 0;
+			(void) value;  // TODO
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x0C201000: {  // plic.contexts[1].priority_threshold
 			if (store_width != MAW_32BIT) {
 				return VMMAR_BAD_ACCESS;
 			}
