@@ -113,16 +113,32 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			return guest_thr->csr.mepc;
 		}
 		break;
+	case CSR_sepc: {
+			return guest_thr->csr.sepc;
+		}
+		break;
 	case CSR_mscratch: {
 			return guest_thr->csr.mscratch;
+		}
+		break;
+	case CSR_sscratch: {
+			return guest_thr->csr.sscratch;
 		}
 		break;
 	case CSR_mcause: {
 			return guest_thr->csr.mcause;
 		}
 		break;
+	case CSR_scause: {
+			return guest_thr->csr.scause;
+		}
+		break;
 	case CSR_mtval: {
 			return guest_thr->csr.mtval;
+		}
+		break;
+	case CSR_stval: {
+			return guest_thr->csr.stval;
 		}
 		break;
 	case CSR_mhartid: {
@@ -237,16 +253,32 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 			guest_thr->csr.mepc = value;
 		}
 		break;
+	case CSR_sepc: {
+			guest_thr->csr.sepc = value;
+		}
+		break;
 	case CSR_mscratch: {
 			guest_thr->csr.mscratch = value;
+		}
+		break;
+	case CSR_sscratch: {
+			guest_thr->csr.sscratch = value;
 		}
 		break;
 	case CSR_mcause: {
 			guest_thr->csr.mcause = value;
 		}
 		break;
+	case CSR_scause: {
+			guest_thr->csr.scause = value;
+		}
+		break;
 	case CSR_mtval: {
 			guest_thr->csr.mtval = value;
+		}
+		break;
+	case CSR_stval: {
+			guest_thr->csr.stval = value;
 		}
 		break;
 	case CSR_medeleg: {

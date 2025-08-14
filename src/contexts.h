@@ -50,6 +50,7 @@ typedef struct {
 		uint64_t mideleg;
 		uint64_t stvec;
 		uint64_t sepc;
+		uint64_t sscratch;
 		uint64_t scause;
 		uint64_t stval;
 		uint64_t mstatus_mpp : 2;
