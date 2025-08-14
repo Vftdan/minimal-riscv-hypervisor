@@ -92,11 +92,16 @@ void handle_guest_exception(uint64_t mcause)
 							break;
 						case 24:
 							if (unpacked.rs2 == 2 && unpacked.rs1 == 0 && unpacked.rd == 0) {
-								guest_mret();
+								guest_mret();  // MRET
 								return;
 							}
 							break;
 						case 8:
+							if (unpacked.rs2 == 2 && unpacked.rs1 == 0 && unpacked.rd == 0) {
+								guest_mret();  // SRET
+								// TODO differentiate MRET and SRET
+								return;
+							}
 							if (unpacked.rs2 == 5 && unpacked.rs1 == 0 && unpacked.rd == 0) {
 								// WFI
 								asm volatile("wfi");  // TODO yield to another guest

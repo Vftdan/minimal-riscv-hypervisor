@@ -30,6 +30,7 @@ void guest_mret(void)
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
 	PrivilegeLevel source_level = guest_thr->privelege_level;
+	// TODO differentiate MRET and SRET
 	if (source_level == PL_USER) {
 		print_string("\nmret from user mode");
 		panic();
