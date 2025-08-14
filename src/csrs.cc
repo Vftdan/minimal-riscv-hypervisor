@@ -5,6 +5,7 @@
 #ifdef DECLARE_CSR
 
 DECLARE_CSR(0x100, sstatus)
+DECLARE_CSR(0x104, sie)
 DECLARE_CSR(0x105, stvec)
 DECLARE_CSR(0x106, scounteren)
 

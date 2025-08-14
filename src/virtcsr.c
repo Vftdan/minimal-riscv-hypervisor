@@ -5,6 +5,7 @@
 #include "panic.h"
 #include "contexts.h"
 #include "instructions.h"  // Bit manipulation
+#include "guestprivilege.h"
 
 uint64_t get_virtual_csr(CSRNumber csr_id)
 {
@@ -19,17 +20,32 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 	GuestThreadContext *guest_thr = &guest_threads[guest_thid.machine][guest_thid.thread];
 
 	switch (csr_id) {
-	case CSR_sstatus:
 	case CSR_mstatus: {
 			uint64_t result = 0;
 			uint64_t uxl = 2;  // Guest user mode is always 64-bit
 			result |= uxl << 32;
+			result |= uxl << 34;  // sxl
 			result |= guest_thr->csr.mstatus_mpp << 11;
+			result |= guest_thr->csr.sstatus_spp << 8;
 			if (guest_thr->csr.mstatus_mie) {
 				result |= MSTATUS_MIE;
 			}
+			if (guest_thr->csr.sstatus_sie) {
+				result |= MSTATUS_SIE;
+			}
 			if (guest_thr->csr.mstatus_mdt) {
 				result |= MSTATUS_MDT;
+			}
+			return result;
+		}
+		break;
+	case CSR_sstatus: {
+			uint64_t result = 0;
+			uint64_t uxl = 2;  // Guest user mode is always 64-bit
+			result |= uxl << 32;
+			result |= guest_thr->csr.sstatus_spp << 8;
+			if (guest_thr->csr.sstatus_sie) {
+				result |= MSTATUS_SIE;
 			}
 			return result;
 		}
@@ -44,6 +60,29 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			}
 			if (guest_thr->csr.mie_meie) {
 				result |= MIE_MEIE;
+			}
+			if (guest_thr->csr.sie_ssie) {
+				result |= MIE_SSIE;
+			}
+			if (guest_thr->csr.sie_stie) {
+				result |= MIE_STIE;
+			}
+			if (guest_thr->csr.sie_seie) {
+				result |= MIE_SEIE;
+			}
+			return result;
+		}
+		break;
+	case CSR_sie: {
+			uint64_t result = 0;
+			if (guest_thr->csr.sie_ssie) {
+				result |= MIE_SSIE;
+			}
+			if (guest_thr->csr.sie_stie) {
+				result |= MIE_STIE;
+			}
+			if (guest_thr->csr.sie_seie) {
+				result |= MIE_SEIE;
 			}
 			return result;
 		}
@@ -129,11 +168,12 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	GuestThreadContext *guest_thr = &guest_threads[guest_thid.machine][guest_thid.thread];
 
 	switch (csr_id) {
-	case CSR_sstatus:
 	case CSR_mstatus: {
 			bool should_panic = false;
 			guest_thr->csr.mstatus_mpp = (value >> 11) & 3;
+			guest_thr->csr.sstatus_spp = (value >> 8) & 1;
 			guest_thr->csr.mstatus_mie = !!(value & MSTATUS_MIE);
+			guest_thr->csr.sstatus_sie = !!(value & MSTATUS_SIE);
 			if (value & MSTATUS_MDT) {
 				guest_thr->csr.mstatus_mdt = true;
 			}
@@ -143,13 +183,33 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 			}
 		}
 		break;
+	case CSR_sstatus: {
+			guest_thr->csr.sstatus_spp = (value >> 8) & 1;
+			guest_thr->csr.sstatus_sie = !!(value & MSTATUS_SIE);
+		}
+		break;
 	case CSR_mie: {
 			guest_thr->csr.mie_msie = !!(value & MIE_MSIE);
 			guest_thr->csr.mie_mtie = !!(value & MIE_MTIE);
 			guest_thr->csr.mie_meie = !!(value & MIE_MEIE);
-			value &= ~(MIE_MSIE | MIE_MTIE | MIE_MEIE);
+			guest_thr->csr.sie_ssie = !!(value & MIE_SSIE);
+			guest_thr->csr.sie_stie = !!(value & MIE_STIE);
+			guest_thr->csr.sie_seie = !!(value & MIE_SEIE);
+			value &= ~(MIE_MSIE | MIE_MTIE | MIE_MEIE | MIE_SSIE | MIE_STIE | MIE_SEIE);
 			if (value) {
 				print_string("\nUnhandled mie fields: ");
+				print_addr(value);
+				panic();
+			}
+		}
+		break;
+	case CSR_sie: {
+			guest_thr->csr.sie_ssie = !!(value & MIE_SSIE);
+			guest_thr->csr.sie_stie = !!(value & MIE_STIE);
+			guest_thr->csr.sie_seie = !!(value & MIE_SEIE);
+			value &= ~(MIE_SSIE | MIE_STIE | MIE_SEIE);
+			if (value) {
+				print_string("\nUnhandled sie fields: ");
 				print_addr(value);
 				panic();
 			}
@@ -166,6 +226,7 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	case CSR_satp: {
 			guest_thr->csr.satp_ppn = EXTRACT_BITS(value, 0, 44);
 			guest_thr->csr.satp_mode = EXTRACT_BITS(value, 60, 4);
+			guest_on_satp_write();
 			// Ignore satp.ASID
 		}
 		break;

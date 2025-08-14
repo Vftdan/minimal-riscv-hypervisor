@@ -16,12 +16,26 @@ typedef struct {
 #endif
 } HostThreadData;
 
+typedef enum {
+	PL_USER = 0,
+	PL_SUPER = 1,
+	PL_HYPER = 2,
+	PL_MACHINE = 3,
+} PrivilegeLevel;
+
+static const char PL_NAMES[] = {
+	[PL_MACHINE] = 'M',
+	[PL_HYPER] = 'H',
+	[PL_SUPER] = 'S',
+	[PL_USER] = 'U',
+};
+
 typedef struct {
 	PagetablePage *shadow_page_table;  // Guest virtual to host physical
 	bool shadow_pt_active;
-	bool user_mode;
 	bool timer_scheduled;
 	bool deferred_exception;
+	PrivilegeLevel privelege_level;
 	uint64_t timer_deadline;
 	uint64_t timer_suspended_at;
 	uint64_t timer_adjustment;
@@ -35,12 +49,20 @@ typedef struct {
 		uint64_t medeleg;
 		uint64_t mideleg;
 		uint64_t stvec;
+		uint64_t sepc;
+		uint64_t scause;
+		uint64_t stval;
 		uint64_t mstatus_mpp : 2;
+		uint64_t sstatus_spp : 1;
 		uint64_t mstatus_mie : 1;
+		uint64_t sstatus_sie : 1;
 		uint64_t mstatus_mdt : 1;
 		uint64_t mie_msie : 1;
 		uint64_t mie_mtie : 1;
 		uint64_t mie_meie : 1;
+		uint64_t sie_ssie : 1;
+		uint64_t sie_stie : 1;
+		uint64_t sie_seie : 1;
 		uint64_t satp_mode : 4;
 		uint64_t satp_ppn : 44;
 	} csr;

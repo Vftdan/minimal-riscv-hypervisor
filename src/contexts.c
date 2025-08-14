@@ -1,6 +1,6 @@
 #include "contexts.h"
 
-#define GUEST_THREAD_CONTEXT_INIT (GuestThreadContext) {.csr.mstatus_mdt = true}
+#define GUEST_THREAD_CONTEXT_INIT (GuestThreadContext) {.csr.mstatus_mdt = true, .privelege_level = PL_MACHINE}
 
 GuestThreadContext guest_threads[MAX_GUESTS][MAX_VIRT_HARTS] = {{GUEST_THREAD_CONTEXT_INIT}};
 HostThreadData host_threads[MAX_PHYS_HARTS] = {};

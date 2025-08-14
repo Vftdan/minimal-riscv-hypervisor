@@ -39,7 +39,7 @@ $(BUILD_DIR)/panic.o: $(SRC_DIR)/panic.c $(panic_h) $(hypervisor_h) $(print_h) $
 
 $(BUILD_DIR)/contexts.o: $(SRC_DIR)/contexts.c $(contexts_h)
 
-$(BUILD_DIR)/virtcsr.o: $(SRC_DIR)/virtcsr.c $(virtcsr_h) $(print_h) $(panic_h) $(contexts_h) $(instructions_h) $(SRC_DIR)/csrs.cc
+$(BUILD_DIR)/virtcsr.o: $(SRC_DIR)/virtcsr.c $(virtcsr_h) $(print_h) $(panic_h) $(contexts_h) $(instructions_h) $(guestprivilege_h) $(SRC_DIR)/csrs.cc
 
 $(BUILD_DIR)/virtmmdev.o: $(SRC_DIR)/virtmmdev.c $(virtmmdev_h) $(print_h) $(uart_h) $(timer_h) $(contexts_h)
 

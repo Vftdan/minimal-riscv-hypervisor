@@ -41,6 +41,10 @@ void panic(void)
 	}
 #endif
 	dump_caller_registers();
+	GuestThreadContext *guest_ctx = &guest_threads[ctx->current_guest.machine][ctx->current_guest.thread];
+	print_string("Guest mode: ");
+	print_string_slice(1, &PL_NAMES[guest_ctx->privelege_level]);
+	print_string("\n");
 	halt_thread();
 }
 

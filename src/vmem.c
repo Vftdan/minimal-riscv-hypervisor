@@ -362,7 +362,7 @@ static bool try_resolve_gu_to_gm(GuestThreadContext *guest_ctx, HostThreadData *
 			return false;
 		}
 		if (entry_guest.permissions & (PERMBIT(R) | PERMBIT(W) | PERMBIT(X))) {
-			if (!(entry_guest.permissions & PERMBIT(U))) {
+			if (guest_ctx->privelege_level == PL_USER && !(entry_guest.permissions & PERMBIT(U))) {
 				print_string("\nNon-GU page");
 				return false;
 			}
