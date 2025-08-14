@@ -77,6 +77,39 @@ static uintptr_t parse_source_address(PackedInstruction *instr_ptr, HostThreadDa
 				}
 				break;
 			}
+		case 0b0101111: {
+				if (unpacked.funct3 == 2 || unpacked.funct3 == 3) {
+					if (width_out) {
+						if (unpacked.funct3 == 2) {
+							*width_out = MAW_32BIT;
+						} else {
+							*width_out = MAW_64BIT;
+						}
+					}
+					uint8_t funct5 = unpacked.funct7 >> 2;
+					bool aq = (unpacked.funct7 >> 1) & 1;
+					bool rl = (unpacked.funct7 >> 0) & 1;
+					int addr_reg = unpacked.rs1;
+					int data_reg_src = unpacked.rs2;
+					int data_reg_dst = unpacked.rd;
+					(void) data_reg_dst;
+					(void) aq;
+					(void) rl;
+					switch (funct5) {
+					case 0:  // AMOADD
+					case 1:  // AMOSWAP
+						if (reg_out) {
+							*reg_out = data_reg_src;
+						}
+						uintptr_t addr = addr_reg ? ctx->active_regs.x_plus_one[addr_reg - 1] : 0;
+						if (pc_advance_out) {
+							*pc_advance_out = 0;  // Cannot emulate
+						}
+						return addr;
+					}
+				}
+				break;
+			}
 		}
 
 // fail:
@@ -221,6 +254,39 @@ static uintptr_t parse_destination_address(PackedInstruction *instr_ptr, HostThr
 						*width_out = MAW_64BIT;
 					}
 					return addr;
+				}
+				break;
+			}
+		case 0b0101111: {
+				if (unpacked.funct3 == 2 || unpacked.funct3 == 3) {
+					if (width_out) {
+						if (unpacked.funct3 == 2) {
+							*width_out = MAW_32BIT;
+						} else {
+							*width_out = MAW_64BIT;
+						}
+					}
+					uint8_t funct5 = unpacked.funct7 >> 2;
+					bool aq = (unpacked.funct7 >> 1) & 1;
+					bool rl = (unpacked.funct7 >> 0) & 1;
+					int addr_reg = unpacked.rs1;
+					int data_reg_src = unpacked.rs2;
+					int data_reg_dst = unpacked.rd;
+					(void) data_reg_src;
+					(void) aq;
+					(void) rl;
+					switch (funct5) {
+					case 0:  // AMOADD
+					case 1:  // AMOSWAP
+						if (reg_out) {
+							*reg_out = data_reg_dst;
+						}
+						uintptr_t addr = addr_reg ? ctx->active_regs.x_plus_one[addr_reg - 1] : 0;
+						if (pc_advance_out) {
+							*pc_advance_out = 0;  // Cannot emulate
+						}
+						return addr;
+					}
 				}
 				break;
 			}
@@ -518,6 +584,9 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		return PFHR_SUCCESS;
 	case PFHR_TOO_LOW: {
 			// Devices are mapped below RAM
+			if (pc_advance == 0) {  // Cannot emulate
+				return PFHR_TOO_LOW;
+			}
 			uint64_t *reg_ptr = rw_reg ? &ctx->active_regs.x_plus_one[rw_reg - 1] : NULL;
 			switch (access_type) {
 			case PERMIDX_R:
