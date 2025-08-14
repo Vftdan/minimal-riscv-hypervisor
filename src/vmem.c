@@ -375,7 +375,7 @@ static bool try_resolve_gu_to_gm(GuestThreadContext *guest_ctx, HostThreadData *
 			return true;
 		}
 		// Next page
-		if (component_offset <= PGSHIFT) {
+		if (component_offset < PGSHIFT) {
 			print_string("\nNo RWX bits at the third-level guest pagetable entry");
 			return false;
 		}
