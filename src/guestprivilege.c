@@ -57,6 +57,18 @@ void guest_mret(void)
 		guest_thr->csr.mstatus_mdt = false;
 		apply_satp(guest_thr);
 	}
+	switch (source_level) {
+	case PL_MACHINE:
+		guest_thr->csr.mstatus_mie = guest_thr->csr.mstatus_mpie;
+		guest_thr->csr.mstatus_mpie = true;
+		break;
+	case PL_SUPER:
+		guest_thr->csr.sstatus_sie = guest_thr->csr.sstatus_spie;
+		guest_thr->csr.sstatus_spie = true;
+		break;
+	default:
+		break;
+	}
 	guest_check_deferred();
 }
 
@@ -80,6 +92,8 @@ void guest_exception(uint64_t mcause)
 			vmem_fence(NULL, NULL);
 		}
 		guest_thr->csr.mstatus_mdt = true;
+		guest_thr->csr.mstatus_mpie = guest_thr->csr.mstatus_mie;
+		guest_thr->csr.mstatus_mie = false;
 		guest_thr->csr.mepc = r_mepc();
 		w_mepc(guest_thr->csr.mtvec);
 		guest_thr->privelege_level = PL_MACHINE;
@@ -87,6 +101,8 @@ void guest_exception(uint64_t mcause)
 		guest_thr->csr.mtval = r_mtval();
 		break;
 	case PL_SUPER:
+		guest_thr->csr.sstatus_spie = guest_thr->csr.sstatus_sie;
+		guest_thr->csr.sstatus_sie = false;
 		guest_thr->csr.sepc = r_mepc();
 		w_mepc(guest_thr->csr.stvec);
 		guest_thr->privelege_level = PL_SUPER;

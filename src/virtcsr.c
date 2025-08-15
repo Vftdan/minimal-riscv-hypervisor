@@ -33,6 +33,12 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			if (guest_thr->csr.sstatus_sie) {
 				result |= MSTATUS_SIE;
 			}
+			if (guest_thr->csr.mstatus_mpie) {
+				result |= MSTATUS_MPIE;
+			}
+			if (guest_thr->csr.sstatus_spie) {
+				result |= MSTATUS_SPIE;
+			}
 			if (guest_thr->csr.mstatus_mdt) {
 				result |= MSTATUS_MDT;
 			}
@@ -46,6 +52,9 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 			result |= guest_thr->csr.sstatus_spp << 8;
 			if (guest_thr->csr.sstatus_sie) {
 				result |= MSTATUS_SIE;
+			}
+			if (guest_thr->csr.sstatus_spie) {
+				result |= MSTATUS_SPIE;
 			}
 			return result;
 		}
@@ -190,6 +199,8 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 			guest_thr->csr.sstatus_spp = (value >> 8) & 1;
 			guest_thr->csr.mstatus_mie = !!(value & MSTATUS_MIE);
 			guest_thr->csr.sstatus_sie = !!(value & MSTATUS_SIE);
+			guest_thr->csr.mstatus_mpie = !!(value & MSTATUS_MPIE);
+			guest_thr->csr.sstatus_spie = !!(value & MSTATUS_SPIE);
 			if (value & MSTATUS_MDT) {
 				guest_thr->csr.mstatus_mdt = true;
 			}
@@ -202,6 +213,7 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 	case CSR_sstatus: {
 			guest_thr->csr.sstatus_spp = (value >> 8) & 1;
 			guest_thr->csr.sstatus_sie = !!(value & MSTATUS_SIE);
+			guest_thr->csr.sstatus_spie = !!(value & MSTATUS_SPIE);
 		}
 		break;
 	case CSR_mie: {

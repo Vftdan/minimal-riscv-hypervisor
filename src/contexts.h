@@ -57,6 +57,8 @@ typedef struct {
 		uint64_t sstatus_spp : 1;
 		uint64_t mstatus_mie : 1;
 		uint64_t sstatus_sie : 1;
+		uint64_t mstatus_mpie : 1;
+		uint64_t sstatus_spie : 1;
 		uint64_t mstatus_mdt : 1;
 		uint64_t mie_msie : 1;
 		uint64_t mie_mtie : 1;
