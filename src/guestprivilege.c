@@ -143,10 +143,22 @@ bool guest_check_deferred(void)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
-	if(!guest_thr->csr.mstatus_mie || guest_thr->csr.mstatus_mdt) {
-		return false;
-	}
 	if (guest_thr->deferred_exception) {
+		PrivilegeLevel target_level = get_exception_target_mode(guest_thr->deferred_mcause, NULL);
+		switch (target_level) {
+		case PL_MACHINE:
+			if(!guest_thr->csr.mstatus_mie || guest_thr->csr.mstatus_mdt) {
+				return false;
+			}
+			break;
+		case PL_SUPER:
+			if(!guest_thr->csr.sstatus_sie) {
+				return false;
+			}
+			break;
+		default:
+			break;
+		}
 		guest_thr->deferred_exception = false;
 		guest_exception(guest_thr->deferred_mcause);
 		return true;
