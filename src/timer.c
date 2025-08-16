@@ -27,7 +27,7 @@ uint64_t timer_get_time_virtual(void)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
-	return clint0->mtime - guest_thr->timer_adjustment;
+	return guest_thr->timer_suspended_at - guest_thr->timer_adjustment;
 }
 
 void timer_interrupt_at(uint64_t deadline)
