@@ -656,9 +656,6 @@ PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_
 		// TODO at this moment other harts should not read this entry neither from hypervisor code nor through a MMU
 		//      the virtual machine might need to be interrupted, except for the harts that currently use another page table
 		machine_pagetable_roots[ctx->current_guest.machine][lvl3] = pack_pt_entry(unpacked);
-		print_string("[Lazy-initializing level 3 page of ");
-		print_addr(lvl3 << 30);
-		print_string("]");
 	}
 	PackedPagetableEntry *packed_ptr = &(*unpacked.child_table)[lvl2];
 	unpacked = unpack_pt_entry(*packed_ptr);  // REASSIGN unpacked to the child level entry
@@ -673,9 +670,6 @@ PageFaultHandlerResult ensure_guest_machine_mapped(HostThreadData *ctx, uintptr_
 	// Make sure to not set the G bit, because it might cause an undefined behavior when there are multiple harts
 	unpacked.permissions = PERMBIT(V) | PERMBIT(U) | PERMBIT(R) | PERMBIT(W) | PERMBIT(X);
 	*packed_ptr = pack_pt_entry(unpacked);  // Write the child-level entry
-	print_string("[Lazy-initializing level 2 page of ");
-	print_addr((lvl3 << 30) | (lvl2 << 21));
-	print_string("]");
 	vmem_fence(NULL, NULL);
 	if (hm_addr_out) {
 		*hm_addr_out = &unpacked.resolved_range_start[(gm_addr >> 12) & 0x1FF][gm_addr & 0xFFF];
