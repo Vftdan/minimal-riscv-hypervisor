@@ -8,7 +8,8 @@ typedef struct {
 	volatile atomic_flag flag;
 } SpinLock;
 
-#define SPIN_LOCK_UNLOCKED (SpinLock) { .flag = ATOMIC_FLAG_INIT }
+#define SPIN_LOCK_UNLOCKED_LIT { .flag = ATOMIC_FLAG_INIT }
+#define SPIN_LOCK_UNLOCKED (SpinLock) SPIN_LOCK_UNLOCKED_LIT
 
 // Returns true if the acquiry was successful
 __attribute__((unused)) __attribute__((warn_unused_result))

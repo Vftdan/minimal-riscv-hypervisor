@@ -17,17 +17,19 @@ sync_h = $(SRC_DIR)/sync.h
 uart_h = $(SRC_DIR)/uart.h
 print_h = $(SRC_DIR)/print.h
 panic_h = $(SRC_DIR)/panic.h
-contexts_h = $(SRC_DIR)/contexts.h $(base_types_h) $(vmem_h)
+ringbuf_h = $(SRC_DIR)/ringbuf.h $(sync_h)
+contexts_h = $(SRC_DIR)/contexts.h $(base_types_h) $(vmem_h) $(ringbuf_h)
 instructions_h = $(SRC_DIR)/instructions.h
 virtcsr_h = $(SRC_DIR)/virtcsr.h $(csr_h)
 virtmmdev_h = $(SRC_DIR)/virtmmdev.h $(vmem_h)
 guestprivilege_h = $(SRC_DIR)/guestprivilege.h
 stacktrace_h = $(SRC_DIR)/stacktrace.h
 timer_h = $(SRC_DIR)/timer.h $(base_types_h)
+extinterrupts_h = $(SRC_DIR)/extinterrupts.h
 
-$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h) $(timer_h) $(stacktrace_h)
+$(BUILD_DIR)/hypervisor.o: $(SRC_DIR)/hypervisor.c $(hypervisor_h) $(csr_h) $(exchandlers_h) $(print_h) $(panic_h) $(contexts_h) $(timer_h) $(extinterrupts_h) $(stacktrace_h)
 
-$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(contexts_h) $(instructions_h) $(virtcsr_h) $(timer_h)
+$(BUILD_DIR)/exchandlers.o: $(SRC_DIR)/exchandlers.c $(exchandlers_h) $(hypervisor_h) $(csr_h) $(print_h) $(panic_h) $(vmem_h) $(contexts_h) $(instructions_h) $(virtcsr_h) $(timer_h) $(extinterrupts_h)
 
 $(BUILD_DIR)/vmem.o: $(SRC_DIR)/vmem.c $(vmem_h) $(print_h) $(panic_h) $(pagealloc_h) $(contexts_h) $(instructions_h) $(virtmmdev_h)
 
@@ -41,10 +43,12 @@ $(BUILD_DIR)/contexts.o: $(SRC_DIR)/contexts.c $(contexts_h)
 
 $(BUILD_DIR)/virtcsr.o: $(SRC_DIR)/virtcsr.c $(virtcsr_h) $(print_h) $(panic_h) $(contexts_h) $(instructions_h) $(guestprivilege_h) $(SRC_DIR)/csrs.cc
 
-$(BUILD_DIR)/virtmmdev.o: $(SRC_DIR)/virtmmdev.c $(virtmmdev_h) $(print_h) $(uart_h) $(timer_h) $(contexts_h)
+$(BUILD_DIR)/virtmmdev.o: $(SRC_DIR)/virtmmdev.c $(virtmmdev_h) $(print_h) $(uart_h) $(timer_h) $(contexts_h) $(extinterrupts_h)
 
 $(BUILD_DIR)/guestprivilege.o: $(SRC_DIR)/guestprivilege.c $(guestprivilege_h) $(contexts_h) $(print_h) $(panic_h)
 
 $(BUILD_DIR)/timer.o: $(SRC_DIR)/timer.c $(timer_h) $(contexts_h) $(print_h) $(panic_h) $(guestprivilege_h)
 
 $(BUILD_DIR)/stacktrace.o: $(SRC_DIR)/stacktrace.c $(stacktrace_h) $(contexts_h)
+
+$(BUILD_DIR)/extinterrupts.o: $(SRC_DIR)/extinterrupts.c $(extinterrupts_h) $(contexts_h) $(uart_h) $(print_h) $(guestprivilege_h)

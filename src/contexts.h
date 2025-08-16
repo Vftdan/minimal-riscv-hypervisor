@@ -3,6 +3,7 @@
 
 #include "base_types.h"
 #include "vmem.h"
+#include "ringbuf.h"
 
 typedef struct {
 	// Order expected by assembly
@@ -69,11 +70,19 @@ typedef struct {
 		uint64_t satp_mode : 4;
 		uint64_t satp_ppn : 44;
 	} csr;
+	struct {
+		bool subscribe_uart_rda;
+		bool subscribe_uart_thre;
+	} plic;
 } GuestThreadContext;
 
 typedef struct {
 	struct {
 		bool dlab;
+		bool ier_rda;
+		bool ier_thre;
+		char old_rbr;
+		ByteRingBuffer input_buffer, output_buffer;
 	} uart;
 } GuestMachineData;
 

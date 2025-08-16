@@ -10,7 +10,7 @@ QEMU=qemu-system-riscv64
 QEMUFLAGS=-nographic -machine virt -m 3G -smp 1 -bios none -kernel
 include local.mk
 
-HYPMODS=hypenterleave lto_required hypervisor exchandlers vmem pagealloc print panic contexts virtcsr virtmmdev guestprivilege timer stacktrace
+HYPMODS=hypenterleave lto_required hypervisor exchandlers vmem pagealloc print panic contexts virtcsr virtmmdev guestprivilege timer extinterrupts stacktrace
 
 HYPOBJS:=$(foreach mod,$(HYPMODS),$(BUILD_DIR)/$(mod).o)
 

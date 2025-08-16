@@ -4,8 +4,7 @@
 #include "uart.h"
 #include "timer.h"
 #include "contexts.h"
-
-static volatile UartRegisters *uart0 = (volatile UartRegisters*) 0x10000000;
+#include "extinterrupts.h"
 
 VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, MemoryAccessWidth load_width)
 {
@@ -65,9 +64,18 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 				return VMMAR_BAD_ACCESS;
 			}
 			if (reg_ptr) {
-				uint8_t actual = uart0->lsr;
-				uint8_t result = UART_LSR_THRE | UART_LSR_TEMT;
-				result |= actual & UART_LSR_DR;
+				HostThreadData *host_thr = get_host_thread_address();
+				GuestMachineData *guest_mach = &guest_machines[host_thr->current_guest.machine];
+				uint8_t result = 0;
+				if (!brb_is_full(&guest_mach->uart.output_buffer)) {
+					result |= UART_LSR_THRE;
+				}
+				if (brb_is_empty(&guest_mach->uart.output_buffer)) {
+					result |= UART_LSR_TEMT;
+				}
+				if (!brb_is_empty(&guest_mach->uart.input_buffer)) {
+					result |= UART_LSR_DR;
+				}
 				*(uint8_t*) reg_ptr = result;
 			}
 			return VMMAR_SUCCESS;
@@ -83,7 +91,9 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 			if (guest_mach->uart.dlab) {
 				result = 1;  // dll, divisor = 1
 			} else {
-				result = uart0->rbr;
+				brb_read(&guest_mach->uart.input_buffer, &guest_mach->uart.old_rbr);
+				result = guest_mach->uart.old_rbr;
+				uart_on_rda();  // Check if new data can be added to the buffer
 			}
 			if (reg_ptr) {
 				*(uint8_t*) reg_ptr = result;
@@ -135,7 +145,7 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			return VMMAR_SUCCESS;
 		}
 		break;
-	case 0x0C000028: {  // plic.source_priorities[UART_IRQ = 10]
+	case 0x0C000028: {  // plic.source_priorities[PLIC_UART_IRQ = 10]
 			if (store_width != MAW_32BIT) {
 				return VMMAR_BAD_ACCESS;
 			}
@@ -205,9 +215,8 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			if (guest_mach->uart.dlab) {
 				(void) value;  // Virtual UART divisor is not configurable
 			} else {
-				print_string("\e[0;92m");
-				print_string_slice(1, (char*) &value);
-				print_string("\e[0m");
+				brb_write(&guest_mach->uart.output_buffer, value);
+				uart_on_thre();  // Check if some data can be sent
 			}
 			return VMMAR_SUCCESS;
 		}

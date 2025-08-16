@@ -6,6 +6,7 @@
 #include "panic.h"
 #include "contexts.h"
 #include "timer.h"
+#include "extinterrupts.h"
 #include "stacktrace.h"
 
 uint8_t hypstack0[4096] = {};
@@ -22,11 +23,10 @@ void boot_main(void)
 		w_mstatus(mstatus);
 	}
 
-	// Enable machine-mode interrupts
-	w_mstatus(r_mstatus() | MSTATUS_MIE);
-
 	// Set the machine-mode trap handler to jump to function "_exc_entry" when a trap occurs
 	w_mtvec((uint64_t) _exc_entry);
+
+	init_external_interrupts();
 
 	// Disable paging for now
 	w_satp(0);

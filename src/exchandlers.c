@@ -10,6 +10,7 @@
 #include "virtcsr.h"
 #include "guestprivilege.h"
 #include "timer.h"
+#include "extinterrupts.h"
 
 void handle_interrupt(uint64_t mcause)
 {
@@ -19,7 +20,7 @@ void handle_interrupt(uint64_t mcause)
 		}
 		break;
 	case 11: {
-			// TODO handle external interrupt (plic)
+			handle_external_interrupt();
 		}
 		break;
 	default:

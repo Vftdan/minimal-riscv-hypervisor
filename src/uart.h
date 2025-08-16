@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef struct {
 	union {
@@ -51,6 +52,33 @@ typedef struct {
 #define UART_LSR_THRE (1 << 5)  // Transmitter Holding Register Empty
 #define UART_LSR_TEMT (1 << 6)  // Transmitter Empty
 #define UART_LSR_FIFE (1 << 7)  // FIFO Error
+
+__attribute__((unused)) inline static bool uart_can_putc(volatile UartRegisters *uart)
+{
+	return ((uart->lsr & UART_LSR_THRE) != 0);
+}
+
+__attribute__((unused)) inline static bool uart_can_getc(volatile UartRegisters *uart) {
+	return ((uart->lsr & UART_LSR_DR) != 0);
+}
+
+__attribute__((unused)) inline static void uart_subscribe_thre(volatile UartRegisters *uart, bool enabled)
+{
+	if (enabled) {
+		uart->ier |= UART_IER_THRE;
+	} else {
+		uart->ier &=~UART_IER_THRE;
+	}
+}
+
+__attribute__((unused)) inline static void uart_subscribe_rda(volatile UartRegisters *uart, bool enabled)
+{
+	if (enabled) {
+		uart->ier |= UART_IER_RDA;
+	} else {
+		uart->ier &=~UART_IER_RDA;
+	}
+}
 
 __attribute__((unused)) inline static void uart_putc_blocking(volatile UartRegisters *uart, char c)
 {
