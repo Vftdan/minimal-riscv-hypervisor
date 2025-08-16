@@ -56,7 +56,10 @@ void timer_reschedule(void)
 	for (int i = 0; i < MAX_GUESTS; ++i) {
 		for (int j = 0; j < MAX_VIRT_HARTS; ++j) {
 			GuestThreadContext *guest_thr = &guest_threads[i][j];
-			if (guest_thr->timer_scheduled) {
+			if (guest_thr->timer_retry) {
+				timer_interrupt_at(guest_thr->timer_deadline + guest_thr->timer_adjustment);
+				interrupt_target = (GuestThreadId) {i, j};
+			} else if (guest_thr->timer_scheduled) {
 				if (timer_interrupt_sooner(guest_thr->timer_deadline + guest_thr->timer_adjustment)) {
 					interrupt_target = (GuestThreadId) {i, j};
 				}
@@ -77,8 +80,11 @@ void timer_on_interrupt(void)
 	}
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
 	guest_thr->timer_scheduled = false;
+	guest_thr->timer_retry = false;
 
-	guest_defer_exception(MCAUSE_ASYNC_BIT | MCAUSE_ASYNC_TIMER);
+	if (!guest_defer_exception(MCAUSE_ASYNC_BIT | MCAUSE_ASYNC_TIMER)) {
+		guest_thr->timer_retry = true;
+	}
 }
 
 void timer_suspend_virtual(void)

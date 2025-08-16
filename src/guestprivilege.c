@@ -72,7 +72,7 @@ void guest_mret(void)
 	guest_check_deferred();
 }
 
-void guest_exception(uint64_t mcause)
+static PrivilegeLevel get_exception_target_mode(uint64_t mcause, PrivilegeLevel *source_level_out)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
@@ -80,10 +80,22 @@ void guest_exception(uint64_t mcause)
 	uint64_t delegMask = 1 << (mcause & 63);
 	PrivilegeLevel source_level = guest_thr->privelege_level;
 	PrivilegeLevel target_level = PL_MACHINE;
+	if (source_level_out) {
+		*source_level_out = source_level;
+	}
 	uint64_t delegValue = isAsync ? guest_thr->csr.mideleg : guest_thr->csr.medeleg;
 	if ((delegValue & delegMask) && source_level != PL_MACHINE && guest_thr->csr.sstatus_sie) {
 		target_level = PL_SUPER;
 	}
+	return target_level;
+}
+
+void guest_exception(uint64_t mcause)
+{
+	HostThreadData *host_thr = get_host_thread_address();
+	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
+	PrivilegeLevel source_level;
+	PrivilegeLevel target_level = get_exception_target_mode(mcause, &source_level);
 	switch (target_level) {
 	case PL_MACHINE:
 		if (guest_thr->shadow_pt_active) {
@@ -114,16 +126,17 @@ void guest_exception(uint64_t mcause)
 	}
 }
 
-void guest_defer_exception(uint64_t mcause)
+bool guest_defer_exception(uint64_t mcause)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
 	if (guest_thr->deferred_exception) {
-		return;  // Cannot defer additional ones
+		return false;  // Cannot defer additional ones
 	}
 	guest_thr->deferred_exception = true;
 	guest_thr->deferred_mcause = mcause;
 	guest_check_deferred();
+	return true;
 }
 
 bool guest_check_deferred(void)

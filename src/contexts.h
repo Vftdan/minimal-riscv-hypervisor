@@ -35,6 +35,7 @@ typedef struct {
 	PagetablePage *shadow_page_table;  // Guest virtual to host physical
 	bool shadow_pt_active;
 	bool timer_scheduled;
+	bool timer_retry;
 	bool deferred_exception;
 	PrivilegeLevel privelege_level;
 	uint64_t timer_deadline;
