@@ -36,12 +36,10 @@ typedef struct {
 	bool shadow_pt_active;
 	bool timer_scheduled;
 	bool timer_retry;
-	bool deferred_exception;
 	PrivilegeLevel privelege_level;
 	uint64_t timer_deadline;
 	uint64_t timer_suspended_at;
 	uint64_t timer_adjustment;
-	uint64_t deferred_mcause;
 	struct {
 		uint64_t mtvec;
 		uint64_t mepc;
@@ -50,11 +48,13 @@ typedef struct {
 		uint64_t mtval;
 		uint64_t medeleg;
 		uint64_t mideleg;
+		uint64_t mip;
 		uint64_t stvec;
 		uint64_t sepc;
 		uint64_t sscratch;
 		uint64_t scause;
 		uint64_t stval;
+		uint64_t sip;
 		uint64_t mstatus_mpp : 2;
 		uint64_t sstatus_spp : 1;
 		uint64_t mstatus_mie : 1;
@@ -72,8 +72,10 @@ typedef struct {
 		uint64_t satp_ppn : 44;
 	} csr;
 	struct {
-		bool subscribe_uart_rda;
-		bool subscribe_uart_thre;
+		bool subscribe_uart_irq_machine;
+		bool subscribe_uart_irq_supervisor;
+		bool pending_uart_irq_machine;
+		bool pending_uart_irq_supervisor;
 	} plic;
 } GuestThreadContext;
 
@@ -83,6 +85,8 @@ typedef struct {
 		bool ier_rda;
 		bool ier_thre;
 		char old_rbr;
+		bool notified_rda;
+		bool notified_thre;
 		ByteRingBuffer input_buffer, output_buffer;
 	} uart;
 } GuestMachineData;

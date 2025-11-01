@@ -132,11 +132,24 @@ bool guest_defer_exception(uint64_t mcause)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
-	if (guest_thr->deferred_exception) {
-		return false;  // Cannot defer additional ones
+	if (!(mcause & MCAUSE_ASYNC_BIT)) {
+		print_string("\nTrying to defer a synchronous exception: ");
+		print_addr(mcause);
+		panic();
 	}
-	guest_thr->deferred_exception = true;
-	guest_thr->deferred_mcause = mcause;
+	mcause &= ~MCAUSE_ASYNC_BIT;
+	uint64_t mask = 1ULL << mcause;
+	if (guest_thr->csr.mideleg & mask) {
+		if (guest_thr->csr.sip & mask) {
+			return false;
+		}
+		guest_thr->csr.sip |= mask;
+	} else {
+		if (guest_thr->csr.mip & mask) {
+			return false;
+		}
+		guest_thr->csr.mip |= mask;
+	}
 	guest_check_deferred();
 	return true;
 }
@@ -145,24 +158,32 @@ bool guest_check_deferred(void)
 {
 	HostThreadData *host_thr = get_host_thread_address();
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
-	if (guest_thr->deferred_exception) {
-		PrivilegeLevel target_level = get_exception_target_mode(guest_thr->deferred_mcause, NULL);
-		switch (target_level) {
-		case PL_MACHINE:
-			if(!guest_thr->csr.mstatus_mie || guest_thr->csr.mstatus_mdt) {
-				return false;
+	bool deliverable_m = guest_thr->csr.mstatus_mie && !guest_thr->csr.mstatus_mdt;
+	bool deliverable_s = guest_thr->csr.sstatus_sie && (guest_thr->privelege_level <= PL_SUPER);
+	if (deliverable_m && guest_thr->csr.mip) {
+		uint64_t mask = guest_thr->csr.mip;
+		uint64_t mcause;
+		for (mcause = 0; mcause < 63; ++mcause) {
+			if (mask & (1ULL << mcause)) {
+				break;
 			}
-			break;
-		case PL_SUPER:
-			if(!guest_thr->csr.sstatus_sie) {
-				return false;
-			}
-			break;
-		default:
-			break;
 		}
-		guest_thr->deferred_exception = false;
-		guest_exception(guest_thr->deferred_mcause);
+		guest_thr->csr.mip = mask & ~(1ULL << mcause);
+		mcause |= MCAUSE_ASYNC_BIT;
+		guest_exception(mcause);
+		return true;
+	}
+	if (deliverable_s && guest_thr->csr.sip) {
+		uint64_t mask = guest_thr->csr.sip;
+		uint64_t scause;
+		for (scause = 0; scause < 63; ++scause) {
+			if (mask & (1ULL << scause)) {
+				break;
+			}
+		}
+		guest_thr->csr.sip = mask & ~(1ULL << scause);
+		scause |= MCAUSE_ASYNC_BIT;
+		guest_exception(scause);
 		return true;
 	}
 	return false;

@@ -49,6 +49,7 @@ void uart_on_thre(void)
 	if (updated) {
 		print_string("\e[0m");
 	}
+	forward_external_interrupts();
 }
 
 void uart_on_rda(void)
@@ -60,6 +61,7 @@ void uart_on_rda(void)
 			brb_write(&guest_mach->uart.input_buffer, uart_getc_blocking(uart0));
 		}
 	}
+	forward_external_interrupts();
 }
 
 void init_external_interrupts(void)
@@ -106,17 +108,33 @@ void forward_external_interrupts(void)
 	GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][host_thr->current_guest.thread];
 	GuestMachineData *guest_mach = &guest_machines[host_thr->current_guest.machine];
 	bool has_interrupts = false;
-	if (!has_interrupts && guest_thr->plic.subscribe_uart_rda) {
+	if (!has_interrupts && guest_mach->uart.ier_rda) {
 		if (!brb_is_empty(&guest_mach->uart.input_buffer)) {
-			has_interrupts = true;
+			if (!guest_mach->uart.notified_rda) {
+				guest_mach->uart.notified_rda = true;
+				has_interrupts = true;
+			}
+		} else {
+			guest_mach->uart.notified_rda = false;
 		}
 	}
-	if (!has_interrupts && guest_thr->plic.subscribe_uart_thre) {
+	if (!has_interrupts && guest_mach->uart.ier_thre) {
 		if (!brb_is_full(&guest_mach->uart.output_buffer)) {
-			has_interrupts = true;
+			if (!guest_mach->uart.notified_thre) {
+				guest_mach->uart.notified_thre = true;
+				has_interrupts = true;
+			}
+		} else {
+			guest_mach->uart.notified_thre = false;
 		}
 	}
 	if (has_interrupts) {
-		guest_defer_exception(MCAUSE_ASYNC_BIT | MCAUSE_ASYNC_EXTERNAL);
+		if (guest_thr->plic.subscribe_uart_irq_machine) {
+			guest_thr->plic.pending_uart_irq_machine = true;
+			guest_defer_exception(MCAUSE_ASYNC_BIT | MCAUSE_ASYNC_EXTERNAL);
+		} else if (guest_thr->plic.subscribe_uart_irq_supervisor) {
+			guest_thr->plic.pending_uart_irq_supervisor = true;
+			guest_defer_exception(MCAUSE_ASYNC_BIT | SCAUSE_ASYNC_EXTERNAL);
+		}
 	}
 }

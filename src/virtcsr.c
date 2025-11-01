@@ -163,11 +163,11 @@ uint64_t get_virtual_csr(CSRNumber csr_id)
 		}
 		break;
 	case CSR_mip: {
-			return 0;  //TODO
+			return guest_thr->csr.mip;
 		}
 		break;
 	case CSR_sip: {
-			return 0;  //TODO
+			return guest_thr->csr.sip;
 		}
 		break;
 	default:
@@ -298,15 +298,15 @@ void set_virtual_csr(CSRNumber csr_id, uint64_t value)
 		}
 		break;
 	case CSR_mideleg: {
-			guest_thr->csr.mideleg = value;
+			guest_thr->csr.mideleg = value & ~(1ULL << 7);
 		}
 		break;
 	case CSR_mip: {
-			(void) value;  //TODO
+			guest_thr->csr.mip = value;
 		}
 		break;
 	case CSR_sip: {
-			(void) value;  //TODO
+			guest_thr->csr.sip = value;
 		}
 		break;
 	default:
