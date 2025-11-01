@@ -71,6 +71,22 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x0C200004: {  // plic.contexts[0][false].claim
+			if (load_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			HostThreadData *host_thr = get_host_thread_address();
+			GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][0];
+			uint32_t result = 0;
+			if (guest_thr->plic.pending_uart_irq_machine) {
+				result = PLIC_UART_IRQ;
+			}
+			if (reg_ptr) {
+				*(uint32_t*) reg_ptr = result;
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
 	case 0x0C201004: {  // plic.contexts[0][true].claim
 			if (load_width != MAW_32BIT) {
 				return VMMAR_BAD_ACCESS;
@@ -228,6 +244,21 @@ VirtMMAccessResult virtual_mmdev_store(uintptr_t virt_addr, const void *reg_ptr,
 			}
 			uint32_t value = reg_ptr ? *(uint32_t*) reg_ptr : 0;
 			(void) value;  // TODO
+			return VMMAR_SUCCESS;
+		}
+		break;
+	case 0x0C200004: {  // plic.contexts[0][false].complete
+			if (store_width != MAW_32BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			uint32_t value = reg_ptr ? *(uint32_t*) reg_ptr : 0;
+			HostThreadData *host_thr = get_host_thread_address();
+			GuestThreadContext *guest_thr = &guest_threads[host_thr->current_guest.machine][0];
+			switch (value) {
+			case PLIC_UART_IRQ:
+				guest_thr->plic.pending_uart_irq_machine = false;
+				break;
+			}
 			return VMMAR_SUCCESS;
 		}
 		break;
