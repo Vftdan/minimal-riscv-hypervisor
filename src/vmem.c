@@ -553,7 +553,8 @@ PageFaultHandlerResult handle_page_fault(MempermIndex access_type, uintptr_t *vi
 		fault_addr = parse_destination_address(instr_host_addr, ctx, &rw_width, &rw_reg, &pc_advance);
 		break;
 	case PERMIDX_X:
-		fault_addr = instr_addr;
+		fault_addr = r_mtval();  // This can be different for jump instructions
+		// All other accesses can also use mtval, but we calculate additional information in the parse functions
 		rw_width = 4;
 		break;
 	default:
