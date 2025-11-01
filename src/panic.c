@@ -8,8 +8,8 @@
 void panic(void)
 {
 	print_string("\n\e[0;1;91m*** Hypervisor panic ***\e[0m\n");
-#ifdef USE_STACK_TRACE
 	HostThreadData *ctx = get_host_thread_address();
+#ifdef USE_STACK_TRACE
 	if (ctx) {
 		StackTraceEntry *entry = ctx->stack_trace_caller;
 		StackTraceEntry *entry_slow = entry;
