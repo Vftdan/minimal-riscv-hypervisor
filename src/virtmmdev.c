@@ -129,6 +129,24 @@ VirtMMAccessResult virtual_mmdev_load(uintptr_t virt_addr, void *reg_ptr, Memory
 			return VMMAR_SUCCESS;
 		}
 		break;
+	case 0x10000002: {  // uart.iir
+			if (load_width != MAW_8BIT) {
+				return VMMAR_BAD_ACCESS;
+			}
+			HostThreadData *host_thr = get_host_thread_address();
+			GuestMachineData *guest_mach = &guest_machines[host_thr->current_guest.machine];
+			uint8_t result = 1;
+			if (guest_mach->uart.ier_rda && !brb_is_empty(&guest_mach->uart.input_buffer)) {
+				result = UART_IIR_RDA;
+			} else if (guest_mach->uart.ier_thre && !brb_is_full(&guest_mach->uart.output_buffer)) {
+				result = UART_IIR_THRE;
+			}
+			if (reg_ptr) {
+				*(uint8_t*) reg_ptr = result;
+			}
+			return VMMAR_SUCCESS;
+		}
+		break;
 	case 0x10000003: {  // uart.lcr
 			if (load_width != MAW_8BIT) {
 				return VMMAR_BAD_ACCESS;
