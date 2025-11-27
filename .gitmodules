@@ -1,0 +1,4 @@
+[submodule "xv6"]
+	path = xv6
+	url = https://github.com/Vftdan/xv6-riscv.git
+	branch = no-virtio
